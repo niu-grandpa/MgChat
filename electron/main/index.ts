@@ -55,8 +55,9 @@ async function createMainWindow() {
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.ico'),
     frame: false,
-    width: 430,
-    height: 330,
+    width: 330,
+    height: 395,
+    resizable: false,
     titleBarStyle: 'hidden',
     webPreferences: {
       preload,
@@ -177,17 +178,43 @@ function closeWindow(
 
 // x坐标不需要传递，由屏幕宽度减去给定窗口宽度计算得出
 // 手动调整即可，确保在不同屏幕下位置正确
-function setPosition(_: any, params: { y: number; marginRight: number }) {
-  const { y, marginRight } = params;
+function setPosition(
+  _: any,
+  params: { path: string; y: number; marginRight: number }
+) {
+  const { y, path, marginRight } = params;
   const { width } = screen.getPrimaryDisplay().workAreaSize;
-  win?.setPosition(width - marginRight, y, true);
+  winMap.get(path)?.setPosition(width - marginRight, y, true);
+}
+
+function setWinSize(
+  _: any,
+  params: {
+    path: string;
+    width: number;
+    height: number;
+    maxWidth: number;
+    maxHeight: number;
+    resizable: boolean;
+  }
+) {
+  const { path, width, height, maxWidth, maxHeight, resizable } = params;
+  const cur = winMap.get(path);
+  cur?.setResizable(resizable);
+  cur?.setSize(width, height, true);
+  cur?.setMaximumSize(maxWidth, maxHeight);
 }
 
 // New window example arg: new windows url
 ipcMain.handle('open-win', createChildWindow);
 ipcMain.handle('close-win', closeWindow);
-ipcMain.handle('resize-win', (_: any, width: number, height: number) => {
-  win?.setSize(width, height, true);
-});
+ipcMain.handle('resize-win', setWinSize);
 ipcMain.handle('set-position', setPosition);
+ipcMain.handle('min-win', (_: any, path: string) => {
+  winMap.get(path)?.minimize();
+});
+ipcMain.handle('max-min', (_: any, path: string) => {
+  const currentWin = winMap.get(path);
+  currentWin?.isMaximized() ? currentWin.restore() : currentWin?.maximize();
+});
 ipcMain.handle('set-always-on-top', () => win?.setAlwaysOnTop(true));

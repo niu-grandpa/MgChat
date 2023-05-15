@@ -1,0 +1,21 @@
+.login {
+  height: 395px;
+  background-image: url(https://cdn.pixabay.com/photo/2016/11/05/12/38/fuzzy-1800136_960_720.jpg);
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  &-header {
+    position: relative;
+    height: 136px;
+  }
+
+  &-avatar {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid #adb5f9;
+    box-shadow: 0 0 6px rgb(207, 219, 248);
+    user-select: none;
+  }
+}
