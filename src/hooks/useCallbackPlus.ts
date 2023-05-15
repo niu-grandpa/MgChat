@@ -19,9 +19,9 @@ type UseCallbackPlus<T> = {
  * ```
  */
 export function useCallbackPlus<T>(
-  callback: CallbackWithArgs<T>,
+  callback: CallbackWithArgs,
   deps: DependencyList
-): UseCallbackPlus<T> {
+) {
   const beforeFnRef = useRef<CallbackWithArgs>();
   const afterFnRef = useRef<CallbackWithArgs>();
   const callbackMemo = useMemo<CallbackWithArgs<T>>(() => callback, deps);
@@ -36,9 +36,10 @@ export function useCallbackPlus<T>(
       return this;
     },
     invoke(...args: any[]) {
-      const isStop = beforeFnRef.current?.();
+      const isStop = beforeFnRef.current?.(...args);
       if (isBoolean(isStop) && !isStop) return;
       const returnVal = callbackMemo(...args);
+      if (isBoolean(returnVal) && !returnVal) return;
       afterFnRef.current?.(returnVal);
     },
   };

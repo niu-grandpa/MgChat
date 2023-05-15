@@ -6,7 +6,6 @@ function UserPanel() {
   const { state } = useLocation();
 
   const changeWinShape = useCallback(() => {
-    ipcRenderer.invoke('set-always-on-top');
     ipcRenderer.invoke('resize-win', {
       path: 'main',
       width: 283,

@@ -1,21 +1,40 @@
 .login {
   height: 395px;
-  background-image: url(https://cdn.pixabay.com/photo/2016/11/05/12/38/fuzzy-1800136_960_720.jpg);
-  background-size: cover;
+  font-size: 12px;
+  background-image: radial-gradient(closest-side, #eb694e, #eb694e00),
+    radial-gradient(closest-side, #f30ba4, #f30ba400),
+    radial-gradient(closest-side, #feea83, #feea8300),
+    radial-gradient(closest-side, rgb(150, 128, 241), #aa8ef500),
+    radial-gradient(closest-side, rgba(0, 172, 193, 1), #f8c09300);
+  background-size: 130vmax 130vmax, 80vmax 80vmax, 90vmax 90vmax,
+    110vmax 110vmax, 90vmax 90vmax;
+  background-position: -80vmax -80vmax, 60vmax -30vmax, 10vmax 10vmax,
+    -30vmax -10vmax, 50vmax 50vmax;
   background-repeat: no-repeat;
+  animation: 3s movement linear infinite;
 
   &-header {
     position: relative;
-    height: 136px;
+    height: 150px;
   }
 
   &-avatar {
     position: absolute;
-    top: 65%;
+    top: 60%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border: 2px solid #adb5f9;
-    box-shadow: 0 0 6px rgb(207, 219, 248);
-    user-select: none;
+    border: 2px solid #c8acdb;
+    box-shadow: 0 0 10px #deafc1;
+    -webkit-app-region: no-drag;
+    background-color: #fff;
+  }
+
+  &-form {
+    width: 360px;
+    -webkit-app-region: no-drag;
+
+    .arco-checkbox-text {
+      font-size: 12px;
+    }
   }
 }

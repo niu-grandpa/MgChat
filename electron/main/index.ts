@@ -55,9 +55,10 @@ async function createMainWindow() {
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.ico'),
     frame: false,
-    width: 330,
+    width: 380,
     height: 395,
     resizable: false,
+    alwaysOnTop: true,
     titleBarStyle: 'hidden',
     webPreferences: {
       preload,
@@ -217,4 +218,3 @@ ipcMain.handle('max-min', (_: any, path: string) => {
   const currentWin = winMap.get(path);
   currentWin?.isMaximized() ? currentWin.restore() : currentWin?.maximize();
 });
-ipcMain.handle('set-always-on-top', () => win?.setAlwaysOnTop(true));

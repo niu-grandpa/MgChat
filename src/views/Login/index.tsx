@@ -1,19 +1,44 @@
+import DefaultAvatar from '@/assets/avatar.png';
 import NavBar from '@/components/NavBar';
-import { Avatar, Layout } from '@arco-design/web-react';
-import { IconClose, IconMinus } from '@arco-design/web-react/icon';
+import { useCallbackPlus } from '@/hooks';
+import {
+  Avatar,
+  Button,
+  Checkbox,
+  Form,
+  Input,
+  Layout,
+  Space,
+} from '@arco-design/web-react';
+import {
+  IconClose,
+  IconLock,
+  IconMinus,
+  IconUser,
+} from '@arco-design/web-react/icon';
 import { ipcRenderer } from 'electron';
-import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './index.scss';
 
+type FormData = {
+  username: number;
+  password: number;
+  auto: boolean;
+  remember: boolean;
+};
+
+const { useForm } = Form;
 const { Header, Content } = Layout;
 
 function LoginView() {
   const navigate = useNavigate();
+  const [form] = useForm<FormData>();
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallbackPlus((values: FormData) => {
+    console.log(values);
+  }, []).after(res => {
     navigate('/user', { replace: true, state: { userId: 0 } });
-  }, []);
+  });
 
   return (
     <Layout className='login'>
@@ -34,13 +59,53 @@ function LoginView() {
           ]}
         />
         <Avatar size={62} className='login-avatar'>
-          <img
-            alt='avatar'
-            src='https://dthezntil550i.cloudfront.net/p4/latest/p42102052243097410008650553/1280_960/12bc8bc0-2186-48fb-b432-6c011a559ec0.png'
-          />
+          <img src={DefaultAvatar} style={{ objectFit: 'cover' }} />
         </Avatar>
       </Header>
-      <Content></Content>
+      <Content style={{ padding: '0 44px' }}>
+        <Form<FormData>
+          form={form}
+          size='large'
+          className='login-form'
+          autoComplete='off'
+          validateTrigger='onSubmit'
+          onSubmit={handleLogin.invoke}>
+          <Form.Item
+            field='username'
+            rules={[{ required: true, message: '请输入您的账号' }]}>
+            <Input
+              prefix={<IconUser />}
+              type='number'
+              allowClear
+              placeholder='MG号码/手机'
+            />
+          </Form.Item>
+          <Form.Item
+            field='password'
+            rules={[{ required: true, message: '请输入您的密码' }]}>
+            <Input prefix={<IconLock />} placeholder='密码' allowClear />
+          </Form.Item>
+          <Form.Item>
+            <Space size='large'>
+              <Form.Item field='auto' style={{ marginBottom: 0 }}>
+                <Checkbox>自动登录</Checkbox>
+              </Form.Item>
+              <Form.Item field='remember' style={{ marginBottom: 0 }}>
+                <Checkbox>记住密码</Checkbox>
+              </Form.Item>
+              <Form.Item style={{ marginBottom: 0 }}>
+                <a>找回密码</a>
+              </Form.Item>
+            </Space>
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 12 }}>
+            <Button htmlType='submit' shape='round' long type='primary'>
+              登录
+            </Button>
+          </Form.Item>
+          <a>注册帐号</a>
+        </Form>
+      </Content>
     </Layout>
   );
 }

@@ -18,7 +18,7 @@ function Navbar({ items }: NavbarProps) {
   return (
     <Row className='navbar' justify={'end'}>
       {items.map(({ title, icon, span, danger, onClick }) => {
-        span = span ?? 2;
+        span = span ?? 3;
         return (
           <Col
             key={title}
