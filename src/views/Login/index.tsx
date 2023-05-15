@@ -1,4 +1,4 @@
-import DefaultAvatar from '@/assets/avatar.png';
+import DefaultAvatar from '@/assets/icons/avatar.png';
 import NavBar from '@/components/NavBar';
 import { useCallbackPlus } from '@/hooks';
 import {
@@ -58,11 +58,11 @@ function LoginView() {
             },
           ]}
         />
-        <Avatar size={62} className='login-avatar'>
+        <Avatar size={64} className='login-avatar'>
           <img src={DefaultAvatar} style={{ objectFit: 'cover' }} />
         </Avatar>
       </Header>
-      <Content style={{ padding: '0 44px' }}>
+      <Content className='login-content'>
         <Form<FormData>
           form={form}
           size='large'
@@ -72,18 +72,38 @@ function LoginView() {
           onSubmit={handleLogin.invoke}>
           <Form.Item
             field='username'
-            rules={[{ required: true, message: '请输入您的账号' }]}>
+            rules={[
+              {
+                required: true,
+                minLength: 9,
+                maxLength: 11,
+                message: '请输入正确的账号',
+              },
+            ]}>
             <Input
-              prefix={<IconUser />}
-              type='number'
               allowClear
+              type='number'
+              prefix={<IconUser />}
               placeholder='MG号码/手机'
             />
           </Form.Item>
           <Form.Item
             field='password'
-            rules={[{ required: true, message: '请输入您的密码' }]}>
-            <Input prefix={<IconLock />} placeholder='密码' allowClear />
+            rules={[
+              {
+                required: true,
+                minLength: 9,
+                maxLength: 11,
+                message: '请输入有效的密码',
+              },
+            ]}>
+            <Input
+              allowClear
+              minLength={6}
+              type='password'
+              placeholder='密码'
+              prefix={<IconLock />}
+            />
           </Form.Item>
           <Form.Item>
             <Space size='large'>
@@ -103,7 +123,7 @@ function LoginView() {
               登录
             </Button>
           </Form.Item>
-          <a>注册帐号</a>
+          <a className='login-register'>注册帐号</a>
         </Form>
       </Content>
     </Layout>

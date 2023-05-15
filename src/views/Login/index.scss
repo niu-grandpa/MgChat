@@ -1,21 +1,12 @@
 .login {
   height: 395px;
   font-size: 12px;
-  background-image: radial-gradient(closest-side, #eb694e, #eb694e00),
-    radial-gradient(closest-side, #f30ba4, #f30ba400),
-    radial-gradient(closest-side, #feea83, #feea8300),
-    radial-gradient(closest-side, rgb(150, 128, 241), #aa8ef500),
-    radial-gradient(closest-side, rgba(0, 172, 193, 1), #f8c09300);
-  background-size: 130vmax 130vmax, 80vmax 80vmax, 90vmax 90vmax,
-    110vmax 110vmax, 90vmax 90vmax;
-  background-position: -80vmax -80vmax, 60vmax -30vmax, 10vmax 10vmax,
-    -30vmax -10vmax, 50vmax 50vmax;
-  background-repeat: no-repeat;
-  animation: 3s movement linear infinite;
-
+  // background-color: linear-gradient(270deg, rgba(0, 43, 220, 0.2) 0%, rgba(50, 222, 212, 0.2) 100%);
   &-header {
     position: relative;
-    height: 150px;
+    height: 147px;
+    background-image: url('../../assets/icons/background.svg');
+    background-size: cover;
   }
 
   &-avatar {
@@ -23,18 +14,29 @@
     top: 60%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border: 2px solid #c8acdb;
-    box-shadow: 0 0 10px #deafc1;
+    box-shadow: 0 0 20px #deafc1;
     -webkit-app-region: no-drag;
     background-color: #fff;
   }
 
+  &-content {
+    padding-top: 18px;
+    padding-left: 68px;
+  }
+
   &-form {
-    width: 360px;
+    width: 340px;
+    margin: 0 auto;
     -webkit-app-region: no-drag;
 
     .arco-checkbox-text {
       font-size: 12px;
     }
+  }
+
+  &-register {
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
   }
 }

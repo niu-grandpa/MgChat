@@ -3,7 +3,7 @@
   height: 32px;
   align-items: center;
   font-size: 16px;
-  color: #292828;
+  color: #fff;
 
   &-item {
     line-height: 32px;
@@ -12,7 +12,7 @@
     user-select: none;
     -webkit-app-region: no-drag;
     &:hover {
-      background-color: rgba($color: #fff, $alpha: 0.5);
+      background-color: rgba($color: #fff, $alpha: 0.2);
     }
     &.hover-red:hover {
       background-color: rgba(255, 0, 0, 0.7);

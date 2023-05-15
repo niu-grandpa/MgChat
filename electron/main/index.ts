@@ -55,7 +55,7 @@ async function createMainWindow() {
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.ico'),
     frame: false,
-    width: 380,
+    width: 460,
     height: 395,
     resizable: false,
     alwaysOnTop: true,
