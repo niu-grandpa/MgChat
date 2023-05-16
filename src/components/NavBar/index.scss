@@ -11,15 +11,13 @@
     cursor: pointer;
     user-select: none;
     -webkit-app-region: no-drag;
+
     &:hover {
       background-color: rgba($color: #fff, $alpha: 0.2);
     }
+
     &.hover-red:hover {
       background-color: rgba(255, 0, 0, 0.7);
-    }
-    .arco-icon {
-      font-size: 16;
-      stroke-width: 2;
     }
   }
 }
