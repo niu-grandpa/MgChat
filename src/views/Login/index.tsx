@@ -1,8 +1,8 @@
-import defaultAvatar from '@/assets/icons/avatar.png';
 import UAvatar from '@/components/Avatar';
 import NavBar from '@/components/NavBar';
 import { useCallbackPlus } from '@/hooks';
 import { LoginData, UserLoginBaseInfo } from '@/services/typing';
+import { matchPhone, matchPwd } from '@/utils';
 import {
   Button,
   Checkbox,
@@ -23,7 +23,7 @@ import {
   IconUser,
 } from '@arco-design/web-react/icon';
 import { ipcRenderer } from 'electron';
-import { debounce } from 'lodash-es';
+import { debounce, eq } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './index.scss';
@@ -39,28 +39,21 @@ function LoginView() {
   const [form] = useForm<LoginData>();
 
   const [arrow, setArrow] = useState(false);
-  const [userIcon, setUserIcon] = useState(defaultAvatar);
-  const [historyUsers, setHistoryList] = useState<HistoryUsers>([
-    {
-      username: '和乐团',
-      account: '2864113064',
-      icon: '',
-      online: false,
-      password: '123456798',
-      auto: true,
-      remember: true,
-    },
-  ]);
+  const [userIcon, setUserIcon] = useState('');
+  const [historyUsers, setHistoryList] = useState<HistoryUsers>([]);
 
   const findLocalUser = useCallback((key: string) => {
     const [info] = historyUsers.filter(({ account }) => account === key);
-    return info;
+    return info || {};
   }, []);
 
   const handleInputAccount = debounce((account: string) => {
+    if (!account.length) {
+      form.setFieldsValue({ password: '' });
+    }
     form.setFieldsValue({ account });
     const { icon } = findLocalUser(account);
-    setUserIcon(icon || defaultAvatar);
+    setUserIcon(icon);
   }, 200);
 
   const handleSetHistoryUser = useCallbackPlus((key: string) => {
@@ -84,9 +77,21 @@ function LoginView() {
 
   const handleLogin = useCallbackPlus((values: LoginData) => {
     console.log(values);
-  }, []).after(res => {
-    navigate('/user', { replace: true, state: { userId: 0 } });
-  });
+  }, [])
+    .before(() => {
+      const { account, password } = form.getFieldsValue();
+      if (eq(account!.length, 11) && !matchPhone(account!)) {
+        Message.error('请输入正确的手机号码');
+        return false;
+      }
+      if (!matchPwd(password!)) {
+        Message.error('无效的密码输入');
+        return false;
+      }
+    })
+    .after(res => {
+      navigate('/user', { replace: true, state: { userId: 0 } });
+    });
 
   return (
     <Layout className='login'>
@@ -109,45 +114,45 @@ function LoginView() {
         <UAvatar icon={userIcon} size={68} className='login-avatar' />
       </Header>
       <Content className='login-content'>
-        <Form<LoginData>
+        <Form
           form={form}
           size='large'
           className='login-form'
           autoComplete='off'
           validateTrigger='onSubmit'
           onSubmit={handleLogin.invoke}>
-          <Form.Item
-            field='account'
-            rules={[
-              {
-                required: true,
-                minLength: 9,
-                maxLength: 11,
-                message: '请输入正确的账号',
-              },
-            ]}>
-            <Dropdown
-              trigger='click'
-              popupVisible={arrow}
-              droplist={
-                <Menu
-                  style={{ width: 269 }}
-                  onClickMenuItem={handleSetHistoryUser.invoke}>
-                  {historyUsers?.map(({ username, account, icon }) => (
-                    <Menu.Item key={account} className='dropdown-menu-item'>
-                      <Row align='center'>
-                        <Col flex='50px'>
-                          <UAvatar size={32} {...{ icon }} />
-                        </Col>
-                        <Col flex='auto'>
-                          <p>{username}</p>
-                          <span style={{ color: '#a0a0a0' }}>{account}</span>
-                        </Col>
-                      </Row>
-                    </Menu.Item>
-                  ))}
-                </Menu>
-              }>
+          <Dropdown
+            trigger='click'
+            popupVisible={arrow}
+            droplist={
+              <Menu
+                style={{ width: 269 }}
+                onClickMenuItem={handleSetHistoryUser.invoke}>
+                {historyUsers?.map(({ username, account, icon }) => (
+                  <Menu.Item key={account} className='dropdown-menu-item'>
+                    <Row align='center'>
+                      <Col flex='50px'>
+                        <UAvatar size={32} {...{ icon }} />
+                      </Col>
+                      <Col flex='auto'>
+                        <p>{username}</p>
+                        <span style={{ color: '#a0a0a0' }}>{account}</span>
+                      </Col>
+                    </Row>
+                  </Menu.Item>
+                ))}
+              </Menu>
+            }>
+            <Form.Item
+              field='account'
+              rules={[
+                {
+                  required: true,
+                  minLength: 9,
+                  maxLength: 11,
+                  message: '请您输入正确的账号',
+                },
+              ]}>
               <Input
                 type='number'
                 prefix={<IconUser />}
@@ -163,24 +168,19 @@ function LoginView() {
                 placeholder='MG号码/手机'
                 onChange={handleInputAccount}
               />
-            </Dropdown>
-          </Form.Item>
+            </Form.Item>
+          </Dropdown>
           <Form.Item
             field='password'
             rules={[
               {
                 required: true,
-                minLength: 9,
+                minLength: 8,
                 maxLength: 11,
-                message: '请输入有效的密码',
+                message: '请您输入正确的密码',
               },
             ]}>
-            <Input
-              minLength={6}
-              type='password'
-              placeholder='密码'
-              prefix={<IconLock />}
-            />
+            <Input type='password' placeholder='密码' prefix={<IconLock />} />
           </Form.Item>
           <Form.Item>
             <Space size='large'>
@@ -201,7 +201,7 @@ function LoginView() {
               </Form.Item>
             </Space>
           </Form.Item>
-          <Form.Item style={{ marginBottom: 12 }}>
+          <Form.Item>
             <Button htmlType='submit' shape='round' long type='primary'>
               登录
             </Button>

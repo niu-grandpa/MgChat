@@ -1,6 +1,7 @@
 import { BrowserWindow, app, shell } from 'electron';
 import { release } from 'node:os';
 import { join } from 'node:path';
+import pkg from '../../package.json';
 import winHandler from './handler';
 import { update } from './update';
 
@@ -43,14 +44,15 @@ const winMap = new Map<string, BrowserWindow>();
 const preload = join(__dirname, '../preload/index.js');
 const url = process.env.VITE_DEV_SERVER_URL!;
 const indexHtml = join(process.env.DIST, 'index.html');
+const [width, height] = pkg.debug.winSize;
 
 async function createMainWindow() {
   win = new BrowserWindow({
+    width,
+    height,
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.ico'),
     frame: false,
-    width: 441,
-    height: 340,
     resizable: false,
     alwaysOnTop: true,
     titleBarStyle: 'hidden',

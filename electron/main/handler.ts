@@ -88,7 +88,7 @@ export default function winHandler(config: {
   ) {
     const { y, path, marginRight } = params;
     const { width } = screen.getPrimaryDisplay().workAreaSize;
-    map.get(path)?.setPosition(width - marginRight, y, true);
+    map.get(path)!.setPosition(width - marginRight, y, true);
   }
 
   function setWinSize(
@@ -103,9 +103,13 @@ export default function winHandler(config: {
     }
   ) {
     const { path, width, height, maxWidth, maxHeight, resizable } = params;
-    const cur = map.get(path);
-    cur?.setResizable(resizable);
-    cur?.setSize(width, height, true);
-    cur?.setMaximumSize(maxWidth, maxHeight);
+    const cur = map.get(path)!;
+    const [mw, mh] = cur.getMaximumSize();
+
+    maxWidth && cur.setMaximumSize(mw, maxHeight);
+    maxHeight && cur.setMaximumSize(mh, maxHeight);
+    resizable && cur.setResizable(resizable);
+
+    cur.setSize(width, height, true);
   }
 }

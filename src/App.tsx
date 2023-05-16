@@ -4,7 +4,7 @@ import routes from './routes';
 
 function App() {
   const routeViews = useRoutes(routes);
-  return <section style={{ overflow: 'hidden' }}>{routeViews}</section>;
+  return routeViews;
 }
 
 export default App;
