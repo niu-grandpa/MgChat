@@ -28,13 +28,22 @@
     align-items: center;
 
     &-form {
-      width: 350px;
+      width: 380px;
       display: inline-block;
+      margin-left: 90px;
       text-align: left;
 
       .arco-form {
         margin-top: 24px;
+        .arco-link-disabled {
+          color: var(--color-text-4);
+        }
       }
     }
   }
+}
+
+.arco-tooltip-content-inner {
+  font-size: 11px;
+  color: var(--color-text-3);
 }

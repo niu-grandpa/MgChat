@@ -57,17 +57,20 @@ function LoginView() {
     setUserIcon(icon);
   }, 200);
 
-  const handleSetHistoryUser = useCallbackPlus((key: string) => {
-    const { auto, account, password, remember, icon } = findLocalUser(key);
-    setUserIcon(icon);
-    setArrow(v => !!v);
-    form.setFieldsValue({
-      auto,
-      account,
-      password,
-      remember,
-    });
-  }, []).before((key: string) => {
+  const handleSetHistoryUser = useCallbackPlus(
+    (key: string) => {
+      const { auto, account, password, remember, icon } = findLocalUser(key);
+      setUserIcon(icon);
+      setArrow(v => !!v);
+      form.setFieldsValue({
+        auto,
+        account,
+        password,
+        remember,
+      });
+    },
+    [form]
+  ).before((key: string) => {
     setArrow(v => !v);
     const { online, account } = findLocalUser(key);
     if (online) {

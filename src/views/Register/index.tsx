@@ -1,4 +1,5 @@
 import UAvatar from '@/components/Avatar';
+import CaptchaFormInput from '@/components/CaptchaInput';
 import { useCallbackPlus } from '@/hooks';
 import { ResisterData } from '@/services/typing';
 import { getRegExp } from '@/utils';
@@ -9,28 +10,34 @@ import {
   Layout,
   Message,
   Spin,
+  Tooltip,
   Typography,
 } from '@arco-design/web-react';
+import {
+  IconCheck,
+  IconEye,
+  IconEyeInvisible,
+  IconInfoCircle,
+} from '@arco-design/web-react/icon';
 import { useState } from 'react';
 import './index.scss';
 
 const { Header, Content } = Layout;
 const { useForm } = Form;
 const { Title } = Typography;
-const { name, phone, pwd } = getRegExp();
+const { phone, pwd } = getRegExp();
 
 function RegisterView() {
   const [form] = useForm<ResisterData>();
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = useCallbackPlus(async (values: ResisterData) => {
+  const [seePwd, setSeePwd] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isSendCode, setIsSendCode] = useState(true);
+  const [isRightPwd, setIsRightPwd] = useState(false);
+
+  const handleSubmit = useCallbackPlus((values: ResisterData) => {
     setLoading(v => !v);
-    const sleep = new Promise(res => {
-      setTimeout(() => {
-        res(1);
-      }, 2000);
-    });
-    return await sleep;
+    return 1;
   }, []).after(res => {
     console.log(res);
     setLoading(v => !v);
@@ -47,56 +54,85 @@ function RegisterView() {
         <Content className='reg-content'>
           <section className='reg-content-form'>
             <Title heading={2}>欢迎注册</Title>
-            <Title heading={6}>像MG机枪一样，聊个不停</Title>
-            <Form size='large' form={form} onSubmit={handleSubmit.invoke}>
+            <Title heading={6}>噼里啪啦，像机枪一样聊不停!</Title>
+            <Form
+              size='large'
+              form={form}
+              onSubmit={handleSubmit.invoke}
+              onValuesChange={(_, { phoneNumber, password }) => {
+                setIsRightPwd(() => pwd.test(password!));
+                setIsSendCode(() => !phone.test(phoneNumber!));
+              }}>
               <Form.Item
                 field='nickname'
                 rules={[
                   {
                     required: true,
-                    match: name,
-                    message: '只能包含汉字,数字,字母和下划线',
+                    minLength: 1,
+                    message: '昵称不可以为空',
                   },
                 ]}>
                 <Input placeholder='昵称' />
               </Form.Item>
-              <Form.Item
-                field='password'
-                rules={[
-                  {
-                    required: true,
-                    match: pwd,
-                    minLength: 8,
-                    maxLength: 12,
-                    message: '密码须8-12位,含大小写字母,特殊字符和数字',
-                  },
-                ]}>
-                <Input type='password' placeholder='密码' />
-              </Form.Item>
+              <Tooltip
+                position='left'
+                content={
+                  <>
+                    <p>
+                      <IconInfoCircle style={{ color: '#165dff' }} />{' '}
+                      不能包括中文和空格
+                    </p>
+                    <p style={{ paddingLeft: 15 }}>长度为8-16个字符</p>
+                    <p style={{ paddingLeft: 15 }}>
+                      必须包含字母、数字、符号2种
+                    </p>
+                  </>
+                }
+                mini
+                color='#fff'>
+                <Form.Item
+                  field='password'
+                  rules={[
+                    {
+                      required: true,
+                      match: pwd,
+                      minLength: 8,
+                      maxLength: 16,
+                      message: '密码格式不正确',
+                    },
+                  ]}>
+                  <Input
+                    type={seePwd ? 'text' : 'password'}
+                    placeholder='密码'
+                    suffix={
+                      isRightPwd && (
+                        <>
+                          <IconCheck
+                            style={{ color: 'green', marginRight: 6 }}
+                          />
+                          {seePwd ? (
+                            <IconEye onClick={() => setSeePwd(false)} />
+                          ) : (
+                            <IconEyeInvisible onClick={() => setSeePwd(true)} />
+                          )}
+                        </>
+                      )
+                    }
+                  />
+                </Form.Item>
+              </Tooltip>
               <Form.Item
                 field='phoneNumber'
                 rules={[
                   {
                     required: true,
                     match: phone,
-                    message: '请输入正确的手机号码',
+                    message: '请填写正确的手机号',
                   },
                 ]}>
-                <Input type='number' placeholder='手机号' />
+                <Input type='number' placeholder='手机号码' />
               </Form.Item>
-              <Form.Item
-                field='code'
-                rules={[{ required: true, message: '请输入验证码' }]}>
-                <Input
-                  type='number'
-                  placeholder='验证码'
-                  addAfter={
-                    <Button size='mini' type='text'>
-                      发送
-                    </Button>
-                  }
-                />
-              </Form.Item>
+              <CaptchaFormInput field='code' disabled={isSendCode} />
               <Form.Item>
                 <Button long type='primary' htmlType='submit'>
                   立即注册
