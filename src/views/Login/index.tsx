@@ -2,7 +2,7 @@ import UAvatar from '@/components/Avatar';
 import NavBar from '@/components/NavBar';
 import { useCallbackPlus } from '@/hooks';
 import { LoginData, UserLoginBaseInfo } from '@/services/typing';
-import { matchPhone, matchPwd } from '@/utils';
+import { getRegExp } from '@/utils';
 import {
   Button,
   Checkbox,
@@ -33,6 +33,7 @@ type HistoryUsers = (UserLoginBaseInfo & LoginData)[];
 const { useForm } = Form;
 const { Header, Content } = Layout;
 const { Row, Col } = Grid;
+const { pwd, phone } = getRegExp();
 
 function LoginView() {
   const navigate = useNavigate();
@@ -80,16 +81,19 @@ function LoginView() {
   }, [])
     .before(() => {
       const { account, password } = form.getFieldsValue();
-      if (eq(account!.length, 11) && !matchPhone(account!)) {
+      if (eq(account!.length, 11) && phone.test(account!)) {
         Message.error('请输入正确的手机号码');
         return false;
       }
-      if (!matchPwd(password!)) {
-        Message.error('无效的密码输入');
+      if (!pwd.test(password!)) {
+        Message.error('无效的密码格式');
         return false;
       }
     })
     .after(res => {
+      // 这里使用路由跳转而不是打开新窗口
+      // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程
+      // 因此只需要渲染路由界面和调整窗口大小位置即可
       navigate('/user', { replace: true, state: { userId: 0 } });
     });
 
@@ -107,16 +111,16 @@ function LoginView() {
               title: '关闭',
               icon: <IconClose />,
               danger: true,
-              onClick: () => ipcRenderer.invoke('close-win', { path: 'main' }),
+              onClick: () =>
+                ipcRenderer.invoke('close-win', { pathname: 'main' }),
             },
           ]}
         />
-        <UAvatar icon={userIcon} size={68} className='login-avatar' />
+        <UAvatar icon={userIcon} size={62} className='login-avatar' />
       </Header>
       <Content className='login-content'>
         <Form
           form={form}
-          size='large'
           className='login-form'
           autoComplete='off'
           validateTrigger='onSubmit'
@@ -128,14 +132,14 @@ function LoginView() {
               <Menu
                 style={{ width: 269 }}
                 onClickMenuItem={handleSetHistoryUser.invoke}>
-                {historyUsers?.map(({ username, account, icon }) => (
+                {historyUsers?.map(({ nickname, account, icon }) => (
                   <Menu.Item key={account} className='dropdown-menu-item'>
                     <Row align='center'>
                       <Col flex='50px'>
                         <UAvatar size={32} {...{ icon }} />
                       </Col>
                       <Col flex='auto'>
-                        <p>{username}</p>
+                        <p>{nickname}</p>
                         <span style={{ color: '#a0a0a0' }}>{account}</span>
                       </Col>
                     </Row>
@@ -150,7 +154,7 @@ function LoginView() {
                   required: true,
                   minLength: 9,
                   maxLength: 11,
-                  message: '请您输入正确的账号',
+                  message: '请输入正确的账号',
                 },
               ]}>
               <Input
@@ -177,36 +181,44 @@ function LoginView() {
                 required: true,
                 minLength: 8,
                 maxLength: 11,
-                message: '请您输入正确的密码',
+                message: '请输入正确的密码',
               },
             ]}>
             <Input type='password' placeholder='密码' prefix={<IconLock />} />
           </Form.Item>
           <Form.Item>
             <Space size='large'>
-              <Form.Item
-                field='auto'
-                triggerPropName='checked'
-                style={{ marginBottom: 0 }}>
+              <Form.Item field='auto' triggerPropName='checked'>
                 <Checkbox>自动登录</Checkbox>
               </Form.Item>
-              <Form.Item
-                field='remember'
-                triggerPropName='checked'
-                style={{ marginBottom: 0 }}>
+              <Form.Item field='remember' triggerPropName='checked'>
                 <Checkbox>记住密码</Checkbox>
               </Form.Item>
-              <Form.Item style={{ marginBottom: 0 }}>
+              <Form.Item>
                 <a>找回密码</a>
               </Form.Item>
             </Space>
           </Form.Item>
-          <Form.Item>
-            <Button htmlType='submit' shape='round' long type='primary'>
+          <Form.Item style={{ marginTop: 6 }}>
+            <Button
+              size='default'
+              htmlType='submit'
+              shape='round'
+              long
+              type='primary'>
               登录
             </Button>
           </Form.Item>
-          <a className='login-register'>注册帐号</a>
+          <a
+            className='login-register'
+            onClick={() => {
+              ipcRenderer.invoke('open-win', {
+                pathname: 'register',
+                title: 'MgChat注册',
+              });
+            }}>
+            注册帐号
+          </a>
         </Form>
       </Content>
     </Layout>

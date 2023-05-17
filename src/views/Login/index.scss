@@ -1,9 +1,9 @@
 .login {
   font-size: 12px;
-  // background-color: linear-gradient(270deg, rgba(0, 43, 220, 0.2) 0%, rgba(50, 222, 212, 0.2) 100%);
+
   &-header {
     position: relative;
-    height: 131px;
+    height: 100px;
     background-image: url('../../assets/icons/background.svg');
     background-size: cover;
   }
@@ -24,12 +24,16 @@
   }
 
   &-form {
-    width: 340px;
     margin: 0 auto;
     -webkit-app-region: no-drag;
 
-    .arco-form-item {
-      margin-bottom: 8px;
+    .arco-form {
+      &-item {
+        margin-bottom: 0;
+      }
+      &-message {
+        font-size: 10px;
+      }
     }
 
     .arco-checkbox-text {
@@ -37,15 +41,15 @@
     }
 
     .arco-input-inner-wrapper {
-      border: 1px solid var(--color-primary-light-2);
+      border: 1px solid var(--color-border-1);
       background-color: transparent;
     }
   }
 
   &-register {
     position: absolute;
-    bottom: 12px;
-    left: 15px;
+    bottom: 16px;
+    left: 16px;
   }
 }
 

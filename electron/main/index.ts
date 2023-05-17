@@ -2,7 +2,7 @@ import { BrowserWindow, app, shell } from 'electron';
 import { release } from 'node:os';
 import { join } from 'node:path';
 import pkg from '../../package.json';
-import winHandler from './handler';
+import winHandler, { loadFile } from './handler';
 import { update } from './update';
 
 // The built directory structure
@@ -42,7 +42,6 @@ let win: BrowserWindow | null = null;
 const winMap = new Map<string, BrowserWindow>();
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js');
-const url = process.env.VITE_DEV_SERVER_URL!;
 const indexHtml = join(process.env.DIST, 'index.html');
 const [width, height] = pkg.debug.winSize;
 
@@ -66,14 +65,11 @@ async function createMainWindow() {
     },
   });
 
-  if (url) {
-    // electron-vite-vue#298
-    win.loadURL(url);
-    // Open devTool if the app is not packaged
-    win.webContents.openDevTools();
-  } else {
-    win.loadFile(indexHtml);
-  }
+  loadFile({
+    win,
+    pathname: '',
+    indexHtml,
+  });
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
@@ -118,9 +114,8 @@ app.on('activate', () => {
 });
 
 winHandler({
-  url,
+  win,
   preload,
   indexHtml,
-  win,
   map: winMap,
 });

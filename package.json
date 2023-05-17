@@ -11,8 +11,8 @@
       "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777/"
     },
     "winSize": [
-      441,
-      360
+      392,
+      300
     ]
   },
   "scripts": {

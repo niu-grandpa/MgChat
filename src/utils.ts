@@ -1,9 +1,15 @@
-export function matchPwd(pwd: string): boolean {
-  const reg = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-  return reg.test(pwd);
-}
+export function getRegExp() {
+  // 昵称要求1-12位字符，只能包含汉字/数字/字母和下划线
+  const name = /^[\u4e00-\u9fa5a-zA-Z0-9]{1,12}$/;
+  // 密码必须包含大小写字母,特殊字符和数字，且长度不低于8位。
+  const pwd =
+    /^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*,\._])[0-9a-zA-Z!@#$%^&*,\\._]{8,12}$/;
+  // 标准手机号码
+  const phone = /^1(3\d|4[5-9]|5[0-35-9]|6[2567]|7[0-8]|8\d|9[0-35-9])\d{8}$/;
 
-export function matchPhone(num: string): boolean {
-  const reg = /^1(3\d|4[5-9]|5[0-35-9]|6[2567]|7[0-8]|8\d|9[0-35-9])\d{8}$/;
-  return reg.test(num);
+  return {
+    pwd,
+    name,
+    phone,
+  };
 }

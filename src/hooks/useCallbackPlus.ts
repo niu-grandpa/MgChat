@@ -2,11 +2,7 @@ import { CallbackWithArgs } from '@/utils/type';
 import { isBoolean } from 'lodash-es';
 import { DependencyList, useMemo, useRef } from 'react';
 
-type UseCallbackPlus<T> = {
-  before(handler: CallbackWithArgs): boolean | UseCallbackPlus<T>;
-  after(handler: CallbackWithArgs<T>): void;
-  invoke(...args: any[]): void;
-};
+type Callback = CallbackWithArgs | Promise<CallbackWithArgs>;
 
 /**
  * 加强版useCallback，能够在本体函数执行前或执行后调用给定的回调，
@@ -18,13 +14,10 @@ type UseCallbackPlus<T> = {
  * }, []).before(() => {...}).after(() => {...});
  * ```
  */
-export function useCallbackPlus<T>(
-  callback: CallbackWithArgs,
-  deps: DependencyList
-) {
+export function useCallbackPlus<T>(callback: Callback, deps: DependencyList) {
   const beforeFnRef = useRef<CallbackWithArgs>();
   const afterFnRef = useRef<CallbackWithArgs>();
-  const callbackMemo = useMemo<CallbackWithArgs<T>>(() => callback, deps);
+  const callbackMemo = useMemo<Callback>(() => callback, deps);
 
   return {
     before(handler: CallbackWithArgs) {
@@ -38,9 +31,24 @@ export function useCallbackPlus<T>(
     invoke(...args: any[]) {
       const isStop = beforeFnRef.current?.(...args);
       if (isBoolean(isStop) && !isStop) return;
-      const returnVal = callbackMemo(...args);
-      if (isBoolean(returnVal) && !returnVal) return;
-      afterFnRef.current?.(returnVal);
+      let fnRes: boolean | any;
+      const fn = (callbackMemo as Function).bind(undefined, ...args);
+      // 处理回调为异步函数
+      if (isAsyncFunction(fn)) {
+        const asyncFn = async () => {
+          fnRes = await fn();
+          afterFnRef.current?.(fnRes);
+        };
+        asyncFn();
+      } else {
+        fnRes = fn();
+        if (isBoolean(fnRes) && !fnRes) return;
+        afterFnRef.current?.(fnRes);
+      }
     },
   };
+}
+
+function isAsyncFunction(fn: any) {
+  return fn[Symbol.toStringTag] === 'AsyncFunction';
 }

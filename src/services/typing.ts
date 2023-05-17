@@ -10,5 +10,13 @@ export type LoginData = {
 export type UserLoginBaseInfo = {
   icon: string;
   online: boolean;
-  username: string;
+  nickname: string;
+};
+
+/**注册表单项数据s */
+export type ResisterData = {
+  nickname: string;
+  password: string;
+  phoneNumber: string;
+  code: number;
 };

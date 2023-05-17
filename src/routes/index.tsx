@@ -5,10 +5,14 @@ export default [
   {
     path: '/',
     index: true,
-    element: <LazyImport comp={() => import('../views/Login')} />,
+    element: <LazyImport comp={() => import('@/views/Login')} />,
   },
   {
     path: '/user',
-    element: <LazyImport comp={() => import('../views/UserPanel')} />,
+    element: <LazyImport comp={() => import('@/views/UserPanel')} />,
+  },
+  {
+    path: '/register',
+    element: <LazyImport comp={() => import('@/views/Register')} />,
   },
 ] as RouteObject[];
