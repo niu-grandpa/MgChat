@@ -1,5 +1,6 @@
 import UAvatar from '@/components/Avatar';
 import NavBar from '@/components/NavBar';
+import PwdFormInput from '@/components/PwdInput';
 import { useCallbackPlus } from '@/hooks';
 import { LoginData, UserLoginBaseInfo } from '@/services/typing';
 import { getRegExp } from '@/utils';
@@ -18,7 +19,6 @@ import {
 import {
   IconClose,
   IconDown,
-  IconLock,
   IconMinus,
   IconUser,
 } from '@arco-design/web-react/icon';
@@ -177,18 +177,7 @@ function LoginView() {
               />
             </Form.Item>
           </Dropdown>
-          <Form.Item
-            field='password'
-            rules={[
-              {
-                required: true,
-                minLength: 8,
-                maxLength: 11,
-                message: '请输入正确的密码',
-              },
-            ]}>
-            <Input type='password' placeholder='密码' prefix={<IconLock />} />
-          </Form.Item>
+          <PwdFormInput field='password' />
           <Form.Item>
             <Space size='large'>
               <Form.Item field='auto' triggerPropName='checked'>

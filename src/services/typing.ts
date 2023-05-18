@@ -15,6 +15,7 @@ export type UserLoginBaseInfo = {
 
 /**注册表单项数据s */
 export type ResisterData = {
+  account?: string;
   nickname: string;
   password: string;
   phoneNumber: string;

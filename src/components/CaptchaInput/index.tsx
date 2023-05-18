@@ -10,7 +10,6 @@ function CaptchaFormInput({
   disabled?: boolean;
 }) {
   const [isSend, setIsSend] = useState(disabled);
-  useEffect(() => setIsSend(disabled), [disabled]);
 
   const btnRef = useRef<HTMLElement>(null);
   const countdown = useRef(59);
@@ -22,7 +21,7 @@ function CaptchaFormInput({
       clearInterval(timer.current as unknown as number);
       timer.current = null;
       countdown.current = 59;
-      btnRef.current!.innerText = '发送验证码';
+      btnRef.current && (btnRef.current.innerText = '发送验证码');
       return;
     }
     btnRef.current!.innerText = `发送验证码(${countdown.current--}s)`;
@@ -35,6 +34,19 @@ function CaptchaFormInput({
     setIsSend(true);
     timer.current = setInterval(timing, 1000);
   });
+
+  useEffect(() => {
+    setIsSend(disabled);
+  }, [disabled]);
+
+  useEffect(() => {
+    return () => {
+      if (timer.current) {
+        clearInterval(timer.current);
+        timer.current = null;
+      }
+    };
+  }, []);
 
   return (
     <Form.Item
