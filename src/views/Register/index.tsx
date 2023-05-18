@@ -86,7 +86,7 @@ function RegisterView() {
                   placeholder='确认密码'
                   validator={(value, callback) => {
                     if (eq(value, undefined)) {
-                      return callback('请填写密码');
+                      return callback('请您填写密码');
                     }
                     if (!eq(value, form.getFieldValue('password'))) {
                       return callback('两次输入的密码不一致');

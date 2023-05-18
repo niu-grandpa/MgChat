@@ -39,10 +39,7 @@ function PwdInput({
     validator ||
       ((val: string, cb: (msg: string) => void) => {
         if (eq(val, undefined)) {
-          return cb('请填写密码');
-        }
-        if (eq(pwd.test(val), false)) {
-          return cb('密码格式不正确');
+          return cb('请您填写密码');
         }
       })
   );

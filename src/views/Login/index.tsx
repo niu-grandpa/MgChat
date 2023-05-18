@@ -9,6 +9,7 @@ import {
   Checkbox,
   Dropdown,
   Form,
+  FormInstance,
   Grid,
   Input,
   Layout,
@@ -23,14 +24,14 @@ import {
   IconUser,
 } from '@arco-design/web-react/icon';
 import { ipcRenderer } from 'electron';
-import { debounce, eq } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { eq } from 'lodash-es';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './index.scss';
 
 type HistoryUsers = (UserLoginBaseInfo & LoginData)[];
 
-const { useForm } = Form;
+const { useForm, useWatch } = Form;
 const { Header, Content } = Layout;
 const { Row, Col } = Grid;
 const { pwd, phone } = getRegExp();
@@ -38,36 +39,32 @@ const { pwd, phone } = getRegExp();
 function LoginView() {
   const navigate = useNavigate();
   const [form] = useForm<LoginData>();
-
   const [arrow, setArrow] = useState(false);
   const [userIcon, setUserIcon] = useState('');
   const [historyUsers, setHistoryList] = useState<HistoryUsers>([]);
 
-  const findLocalUser = useCallback((key: string) => {
-    const [info] = historyUsers.filter(({ account }) => account === key);
-    return info || {};
-  }, []);
-
-  const handleInputAccount = debounce((account: string) => {
+  const account = useWatch('account', form as FormInstance);
+  useEffect(() => {
+    if (eq(account, undefined)) return;
     if (!account.length) {
       form.setFieldsValue({ password: '' });
     }
     form.setFieldsValue({ account });
     const { icon } = findLocalUser(account);
     setUserIcon(icon);
-  }, 200);
+  }, [account]);
 
-  const handleSetHistoryUser = useCallbackPlus(
+  const findLocalUser = useCallback((key: string) => {
+    const [info] = historyUsers.filter(({ account }) => account === key);
+    return info || {};
+  }, []);
+
+  const handleUseHistory = useCallbackPlus(
     (key: string) => {
-      const { auto, account, password, remember, icon } = findLocalUser(key);
+      const { icon, online, nickname, ...rest } = findLocalUser(key);
       setUserIcon(icon);
       setArrow(v => !!v);
-      form.setFieldsValue({
-        auto,
-        account,
-        password,
-        remember,
-      });
+      form.setFieldsValue(rest);
     },
     [form]
   ).before((key: string) => {
@@ -89,7 +86,7 @@ function LoginView() {
         return false;
       }
       if (!pwd.test(password!)) {
-        Message.error('无效的密码格式');
+        Message.error('无效的密码');
         return false;
       }
     })
@@ -134,7 +131,7 @@ function LoginView() {
             droplist={
               <Menu
                 style={{ width: 269 }}
-                onClickMenuItem={handleSetHistoryUser.invoke}>
+                onClickMenuItem={handleUseHistory.invoke}>
                 {historyUsers?.map(({ nickname, account, icon }) => (
                   <Menu.Item key={account} className='dropdown-menu-item'>
                     <Row align='center'>
@@ -157,7 +154,7 @@ function LoginView() {
                   required: true,
                   minLength: 9,
                   maxLength: 11,
-                  message: '请输入正确的账号',
+                  message: '请填写9-11位的账号',
                 },
               ]}>
               <Input
@@ -173,7 +170,6 @@ function LoginView() {
                   />
                 }
                 placeholder='MG号码/手机'
-                onChange={handleInputAccount}
               />
             </Form.Item>
           </Dropdown>
