@@ -2,7 +2,7 @@ import UAvatar from '@/components/Avatar';
 import NavBar from '@/components/NavBar';
 import PwdFormInput from '@/components/PwdInput';
 import { useCallbackPlus } from '@/hooks';
-import { LoginData, UserLoginBaseInfo } from '@/services/typing';
+import { LoginData, LoginResponse } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import {
   Button,
@@ -24,12 +24,12 @@ import {
   IconUser,
 } from '@arco-design/web-react/icon';
 import { ipcRenderer } from 'electron';
-import { eq } from 'lodash-es';
+import { eq, uniqBy } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './index.scss';
 
-type HistoryUsers = (UserLoginBaseInfo & LoginData)[];
+type HistoryUsers = LoginResponse & LoginData;
 
 const { useForm, useWatch } = Form;
 const { Header, Content } = Layout;
@@ -38,10 +38,11 @@ const { pwd, phone } = getRegExp();
 
 function LoginView() {
   const navigate = useNavigate();
+
   const [form] = useForm<LoginData>();
   const [arrow, setArrow] = useState(false);
   const [userIcon, setUserIcon] = useState('');
-  const [historyUsers, setHistoryList] = useState<HistoryUsers>([]);
+  const [historyUsers, setHistoryList] = useState<HistoryUsers[]>([]);
 
   const account = useWatch('account', form as FormInstance);
   useEffect(() => {
@@ -76,12 +77,19 @@ function LoginView() {
     }
   });
 
-  const handleLogin = useCallbackPlus((values: LoginData) => {
+  const handleLogin = useCallbackPlus<HistoryUsers>((values: LoginData) => {
     console.log(values);
+    // todo
+    return {
+      nickname: '王五',
+      online: true,
+      icon: '',
+      ...values,
+    };
   }, [])
     .before(() => {
       const { account, password } = form.getFieldsValue();
-      if (eq(account!.length, 11) && phone.test(account!)) {
+      if (eq(account!.length, 11) && !phone.test(account!)) {
         Message.error('请输入正确的手机号码');
         return false;
       }
@@ -90,12 +98,20 @@ function LoginView() {
         return false;
       }
     })
-    .after(res => {
+    .after(data => {
+      setHistoryList(v => uniqBy([data, ...v], 'account'));
       // 这里使用路由跳转而不是打开新窗口
       // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程
       // 因此只需要渲染路由界面和调整窗口大小位置即可
-      navigate('/user', { replace: true, state: { userId: 0 } });
+      navigate('/user', { replace: true, state: { account: data.account } });
     });
+
+  const handleForget = useCallback(() => {
+    ipcRenderer.send('open-win', {
+      pathname: `forget?account=${form.getFieldValue('account')}`,
+      title: '找回密码',
+    });
+  }, []);
 
   return (
     <Layout className='login'>
@@ -105,26 +121,32 @@ function LoginView() {
             {
               title: '最小化',
               icon: <IconMinus />,
-              onClick: () => ipcRenderer.invoke('min-win', 'main'),
+              onClick: () => ipcRenderer.send('min-win', 'main'),
             },
             {
               title: '关闭',
               icon: <IconClose />,
               danger: true,
               onClick: () =>
-                ipcRenderer.invoke('close-win', { pathname: 'main' }),
+                ipcRenderer.send('close-win', { pathname: 'main' }),
             },
           ]}
         />
         <UAvatar icon={userIcon} size={62} className='login-avatar' />
       </Header>
       <Content className='login-content'>
-        <Form
+        <Form<LoginData>
           form={form}
           className='login-form'
           autoComplete='off'
           validateTrigger='onSubmit'
-          onSubmit={handleLogin.invoke}>
+          onSubmit={handleLogin.invoke}
+          initialValues={{
+            account: '',
+            password: '',
+            auto: false,
+            remember: false,
+          }}>
           <Dropdown
             trigger='click'
             popupVisible={arrow}
@@ -183,7 +205,7 @@ function LoginView() {
                 <Checkbox>记住密码</Checkbox>
               </Form.Item>
               <Form.Item>
-                <a>找回密码</a>
+                <a onClick={handleForget}>找回密码</a>
               </Form.Item>
             </Space>
           </Form.Item>
@@ -200,7 +222,7 @@ function LoginView() {
           <a
             className='login-register'
             onClick={() => {
-              ipcRenderer.invoke('open-win', {
+              ipcRenderer.send('open-win', {
                 pathname: 'register',
                 title: 'MgChat注册',
               });

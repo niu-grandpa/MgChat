@@ -9,10 +9,14 @@ export default [
   },
   {
     path: '/user',
-    element: <LazyImport comp={() => import('@/views/UserPanel')} />,
+    element: <LazyImport comp={() => import('@/views/User')} />,
   },
   {
     path: '/register',
     element: <LazyImport comp={() => import('@/views/Register')} />,
+  },
+  {
+    path: '/forget',
+    element: <LazyImport comp={() => import('@/views/Forget')} />,
   },
 ] as RouteObject[];

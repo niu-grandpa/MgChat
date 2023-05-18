@@ -87,7 +87,7 @@ function PwdInput({
           onChange={v => setIsRightPwd(pwd.test(v))}
           suffix={
             <>
-              {isRightPwd && (
+              {match && isRightPwd && (
                 <IconCheck style={{ color: 'green', marginRight: 6 }} />
               )}
               {seePwd ? (

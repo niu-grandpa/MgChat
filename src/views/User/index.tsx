@@ -6,14 +6,14 @@ function UserPanel() {
   const { state } = useLocation();
 
   const changeWinShape = useCallback(() => {
-    ipcRenderer.invoke('resize-win', {
-      path: 'main',
+    ipcRenderer.send('resize-win', {
+      pathname: 'main',
       width: 283,
       height: 755,
       resizable: true,
     });
-    ipcRenderer.invoke('set-position', {
-      path: 'main',
+    ipcRenderer.send('set-position', {
+      pathname: 'main',
       marginRight: 350,
       y: 50,
     });

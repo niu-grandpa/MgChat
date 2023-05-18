@@ -35,16 +35,14 @@ export default function winHandler(config: {
   const { win, preload, indexHtml, map } = config;
 
   // New window example arg: new windows url
-  ipcMain.handle('open-win', createChildWindow);
-  ipcMain.handle('close-win', closeWindow);
-  ipcMain.handle('resize-win', setWinSize);
-  ipcMain.handle('set-position', setPosition);
-
-  ipcMain.handle('min-win', (_: any, pathname: string) => {
+  ipcMain.on('open-win', createChildWindow);
+  ipcMain.on('close-win', closeWindow);
+  ipcMain.on('resize-win', setWinSize);
+  ipcMain.on('set-position', setPosition);
+  ipcMain.on('min-win', (_: IpcMainInvokeEvent, pathname: string) => {
     map.get(pathname)?.minimize();
   });
-
-  ipcMain.handle('max-min', (_: any, pathname: string) => {
+  ipcMain.on('max-min', (_: IpcMainInvokeEvent, pathname: string) => {
     const currentWin = map.get(pathname);
     currentWin?.isMaximized() ? currentWin.restore() : currentWin?.maximize();
   });
@@ -52,11 +50,11 @@ export default function winHandler(config: {
   // 创建子窗口，渲染的视图对应路由表配置的路由路径
   function createChildWindow(
     _: IpcMainInvokeEvent,
-    params: {
+    args: {
       pathname: string;
     } & BrowserWindowConstructorOptions
   ) {
-    const { pathname, ...rest } = params;
+    const { pathname, ...rest } = args;
     const childWindow = new BrowserWindow({
       ...rest,
       parent: win!,
@@ -68,16 +66,17 @@ export default function winHandler(config: {
         contextIsolation: false,
       },
     });
+
     map.set(pathname, childWindow);
     loadFile({ win: childWindow, pathname, indexHtml });
     childWindow.on('ready-to-show', childWindow.show);
   }
 
   function closeWindow(
-    _: any,
-    params: { pathname: string; destroy?: boolean; onClose?: () => void }
+    _: IpcMainInvokeEvent,
+    args: { pathname: string; destroy?: boolean; onClose?: () => void }
   ) {
-    const { pathname, destroy, onClose } = params;
+    const { pathname, destroy, onClose } = args;
 
     if (!map.has(pathname)) return;
     const currentWin = map.get(pathname)!;
@@ -94,21 +93,21 @@ export default function winHandler(config: {
   // x坐标不需要传递，由屏幕宽度减去给定窗口宽度计算得出
   // 手动调整即可，确保在不同屏幕下位置正确
   function setPosition(
-    _: any,
-    params: { pathname: string; y: number; marginRight: number }
+    _: IpcMainInvokeEvent,
+    args: { pathname: string; y: number; marginRight: number }
   ) {
-    const { y, pathname, marginRight } = params;
+    const { y, pathname, marginRight } = args;
     const { width } = screen.getPrimaryDisplay().workAreaSize;
     map.get(pathname)!.setPosition(width - marginRight, y, true);
   }
 
   function setWinSize(
-    _: any,
-    params: {
+    _: IpcMainInvokeEvent,
+    args: {
       pathname: string;
     } & BrowserWindowConstructorOptions
   ) {
-    const { pathname, width, height, maxWidth, maxHeight, resizable } = params;
+    const { pathname, width, height, maxWidth, maxHeight, resizable } = args;
 
     const cur = map.get(pathname)!;
     cur.setSize(width!, height!, true);

@@ -14,7 +14,7 @@ function Success({ data }: { data: Partial<ResisterData> }) {
         <Button
           type='primary'
           onClick={() =>
-            ipcRenderer.invoke('close-win', { pathname: 'register' })
+            ipcRenderer.send('close-win', { pathname: 'register' })
           }>
           关闭
         </Button>

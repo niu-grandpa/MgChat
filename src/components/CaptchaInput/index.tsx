@@ -51,7 +51,7 @@ function CaptchaFormInput({
   return (
     <Form.Item
       {...{ field }}
-      rules={[{ required: true, message: '请输入验证码' }]}>
+      rules={[{ required: true, message: '请填写验证码' }]}>
       <Input
         type='number'
         placeholder='短信验证码'

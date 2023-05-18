@@ -7,7 +7,7 @@ export type LoginData = {
 };
 
 /**登录成功后返回的用户基本信息 */
-export type UserLoginBaseInfo = {
+export type LoginResponse = {
   icon: string;
   online: boolean;
   nickname: string;
