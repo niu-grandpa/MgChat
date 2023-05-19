@@ -6,6 +6,13 @@
 body {
   box-sizing: border-box;
   -webkit-app-region: drag;
+  background: linear-gradient(
+    270deg,
+    rgba(0, 43, 220, 0.2) 0%,
+    rgba(50, 222, 212, 0.2) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: cover;
   color: rgba($color: #000000, $alpha: 0.8);
   overflow: hidden;
 }
@@ -32,4 +39,11 @@ input[type='number']::-webkit-outer-spin-button {
 .arco-icon {
   font-size: 32;
   stroke-width: 3;
+}
+
+.tooltip-white {
+  .arco-tooltip-content-inner {
+    font-size: 11px;
+    color: var(--color-text-3);
+  }
 }

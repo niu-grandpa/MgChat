@@ -13,11 +13,18 @@ export type LoginResponse = {
   nickname: string;
 };
 
-/**注册表单项数据s */
+/**注册表单项数据 */
 export type ResisterData = {
   account?: string;
   nickname: string;
   password: string;
   phoneNumber: string;
   code: number;
+};
+
+/**修改密码表单项数据 */
+export type ChangePassword = {
+  phoneNumber: string;
+  password: string;
+  code: string;
 };

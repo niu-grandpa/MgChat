@@ -1,4 +1,5 @@
 import { ResisterData } from '@/services/typing';
+import { formatPhoneNumber } from '@/utils';
 import { Button, Result, Typography } from '@arco-design/web-react';
 import { ipcRenderer } from 'electron';
 
@@ -24,7 +25,7 @@ function Success({ data }: { data: Partial<ResisterData> }) {
         <ul>
           <li>昵称: {data.nickname}</li>
           <li>MG号码: {data.account}</li>
-          <li>手机号码: {data.phoneNumber}</li>
+          <li>手机号码: {formatPhoneNumber(data.phoneNumber!)}</li>
         </ul>
       </Typography>
     </Result>

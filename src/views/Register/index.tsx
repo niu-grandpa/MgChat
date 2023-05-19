@@ -1,20 +1,17 @@
 import UAvatar from '@/components/Avatar';
-import CaptchaFormInput from '@/components/CaptchaInput';
+import PhoneLoginFormInput from '@/components/PhoneLoginInput';
 import PwdFormInput from '@/components/PwdInput';
 import { useCallbackPlus } from '@/hooks';
 import { ResisterData } from '@/services/typing';
-import { getRegExp } from '@/utils';
 import {
   Button,
   Form,
-  FormInstance,
   Input,
   Layout,
   Spin,
   Typography,
 } from '@arco-design/web-react';
-import { IconPhone, IconUser } from '@arco-design/web-react/icon';
-import { eq } from 'lodash-es';
+import { IconUser } from '@arco-design/web-react/icon';
 import { useState } from 'react';
 import Success from './Success';
 import './index.scss';
@@ -22,27 +19,31 @@ import './index.scss';
 const { Header, Content } = Layout;
 const { useForm, useWatch } = Form;
 const { Title } = Typography;
-const { phone } = getRegExp();
 
 function RegisterView() {
   const [form] = useForm<ResisterData>();
-  const phoneNumber = useWatch('phoneNumber', form as FormInstance);
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = useCallbackPlus<string>(async (values: ResisterData) => {
-    setLoading(true);
+    // @ts-ignore
+    delete values['double'];
     return new Promise(res => {
       setTimeout(() => {
         res('2864103063');
       }, 2000);
     });
-  }, []).after(account => {
-    form.setFieldsValue({ account });
-    setLoading(false);
-    setSuccess(v => !v);
-  });
+  }, [])
+    .before(async ({ code }: ResisterData) => {
+      setLoading(true);
+      // todo 判断验证码是否过期
+    })
+    .after(account => {
+      form.setFieldsValue({ account });
+      setLoading(false);
+      setSuccess(v => !v);
+    });
 
   return (
     <Spin dot {...{ loading }} style={{ display: 'block' }}>
@@ -76,42 +77,12 @@ function RegisterView() {
                 </Form.Item>
                 <PwdFormInput
                   match
+                  double
                   showTip
-                  field='password'
                   tipPosition='left'
+                  password={() => form.getFieldValue('password') as string}
                 />
-                <PwdFormInput
-                  match
-                  field='pwdConfirm'
-                  placeholder='确认密码'
-                  validator={(value, callback) => {
-                    if (eq(value, undefined)) {
-                      return callback('请您填写密码');
-                    }
-                    if (!eq(value, form.getFieldValue('password'))) {
-                      return callback('两次输入的密码不一致');
-                    }
-                  }}
-                />
-                <Form.Item
-                  field='phoneNumber'
-                  rules={[
-                    {
-                      required: true,
-                      match: phone,
-                      message: '请填写正确的手机号',
-                    },
-                  ]}>
-                  <Input
-                    type='number'
-                    prefix={<IconPhone />}
-                    placeholder='手机号码'
-                  />
-                </Form.Item>
-                <CaptchaFormInput
-                  field='code'
-                  disabled={!phone.test(phoneNumber)}
-                />
+                <PhoneLoginFormInput defaultVal='' />
                 <Form.Item hidden field='account'>
                   <Input />
                 </Form.Item>

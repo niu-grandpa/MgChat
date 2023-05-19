@@ -1,5 +1,4 @@
 import { CallbackWithArgs } from '@/utils/type';
-import { isBoolean } from 'lodash-es';
 import { DependencyList, useMemo, useRef } from 'react';
 
 type Callback = CallbackWithArgs | Promise<CallbackWithArgs>;
@@ -15,7 +14,7 @@ type Callback = CallbackWithArgs | Promise<CallbackWithArgs>;
  * ```
  */
 export function useCallbackPlus<T>(callback: Callback, deps: DependencyList) {
-  const beforeFnRef = useRef<CallbackWithArgs>();
+  const beforeFnRef = useRef<Callback>();
   const afterFnRef = useRef<CallbackWithArgs>();
   const callbackMemo = useMemo<Callback>(() => callback, deps);
 
@@ -29,21 +28,40 @@ export function useCallbackPlus<T>(callback: Callback, deps: DependencyList) {
       return this;
     },
     invoke(...args: any[]) {
-      const isStop = beforeFnRef.current?.(...args);
-      if (isBoolean(isStop) && !isStop) return;
-      let fnRes: boolean | any;
-      const fn = (callbackMemo as Function).bind(undefined, ...args);
-      // 处理回调为异步函数
-      if (isAsyncFunction(fn)) {
-        const asyncFn = async () => {
-          fnRes = await fn();
-          afterFnRef.current?.(fnRes);
-        };
-        asyncFn();
+      const beforeFn = (beforeFnRef.current as Function)?.bind(
+        undefined,
+        ...args
+      );
+
+      const isFalse = (val: any) => val === false;
+
+      const mainTask = () => {
+        let fnRes: boolean | any;
+        const mainFn = (callbackMemo as Function).bind(undefined, ...args);
+        // 处理回调为异步函数
+        if (isAsyncFunction(mainFn)) {
+          const asyncFn = async () => {
+            fnRes = await mainFn();
+            !isFalse(fnRes) && afterFnRef.current?.(fnRes);
+          };
+          asyncFn();
+        } else {
+          fnRes = mainFn();
+          !isFalse(fnRes) && afterFnRef.current?.(fnRes);
+        }
+      };
+
+      if (beforeFn) {
+        if (isAsyncFunction(beforeFn)) {
+          const callBeforeFn = async () => {
+            !isFalse(await beforeFn()) && mainTask();
+          };
+          callBeforeFn();
+        } else if (!isFalse(beforeFn())) {
+          mainTask();
+        }
       } else {
-        fnRes = fn();
-        if (isBoolean(fnRes) && !fnRes) return;
-        afterFnRef.current?.(fnRes);
+        mainTask();
       }
     },
   };
