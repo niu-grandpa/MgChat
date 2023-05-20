@@ -1,7 +1,9 @@
 import { ResisterData } from '@/services/typing';
 import { formatPhoneNumber } from '@/utils';
-import { Button, Result, Typography } from '@arco-design/web-react';
+import { Button, Result, Typography } from 'antd';
 import { ipcRenderer } from 'electron';
+
+const { Paragraph, Text } = Typography;
 
 function Success({ data }: { data: Partial<ResisterData> }) {
   return (
@@ -9,7 +11,7 @@ function Success({ data }: { data: Partial<ResisterData> }) {
       status='success'
       className='result-content'
       title='注册成功'
-      subTitle='感谢您注册MGChat，请回到登录界面使用!'
+      subTitle='感谢您注册MGChat，祝您聊天愉快!'
       style={{ paddingTop: 120 }}
       extra={
         <Button
@@ -20,14 +22,16 @@ function Success({ data }: { data: Partial<ResisterData> }) {
           关闭
         </Button>
       }>
-      <Typography style={{ background: 'var(--color-fill-2)', padding: 24 }}>
-        <Typography.Paragraph>注册信息:</Typography.Paragraph>
-        <ul>
-          <li>昵称: {data.nickname}</li>
-          <li>MG号码: {data.account}</li>
-          <li>手机号码: {formatPhoneNumber(data.phoneNumber!)}</li>
-        </ul>
-      </Typography>
+      <section style={{ padding: 24 }}>
+        <Paragraph>
+          <Text strong style={{ fontSize: 16 }}>
+            用户注册信息:
+          </Text>
+        </Paragraph>
+        <Paragraph>昵称: {data.nickname}</Paragraph>
+        <Paragraph>MG号码: {data.account}</Paragraph>
+        <Paragraph>手机号码: {formatPhoneNumber(data.phoneNumber!)}</Paragraph>
+      </section>
     </Result>
   );
 }

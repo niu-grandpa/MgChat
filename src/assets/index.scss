@@ -1,3 +1,5 @@
+@import './color.scss';
+
 * {
   margin: 0;
   padding: 0;
@@ -6,14 +8,10 @@
 body {
   box-sizing: border-box;
   -webkit-app-region: drag;
-  background: linear-gradient(
-    270deg,
-    rgba(0, 43, 220, 0.2) 0%,
-    rgba(50, 222, 212, 0.2) 100%
-  );
+  background: $background;
   background-repeat: no-repeat;
   background-size: cover;
-  color: rgba($color: #000000, $alpha: 0.8);
+  color: $color-text-1;
   overflow: hidden;
 }
 
@@ -34,16 +32,4 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-.arco-icon {
-  font-size: 32;
-  stroke-width: 3;
-}
-
-.tooltip-white {
-  .arco-tooltip-content-inner {
-    font-size: 11px;
-    color: var(--color-text-3);
-  }
 }

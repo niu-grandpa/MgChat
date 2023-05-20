@@ -1,30 +1,32 @@
 import { useCallbackPlus } from '@/hooks';
 import { getRegExp } from '@/utils';
-import { Button, Form, Input, Message, Space } from '@arco-design/web-react';
-import { IconPhone } from '@arco-design/web-react/icon';
+import { PhoneOutlined } from '@ant-design/icons';
+import { Button, Form, Input, message, Space } from 'antd';
 import { eq } from 'lodash-es';
 import {
-  ReactNode,
   memo,
+  ReactNode,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
 
+type Props = {
+  prefix?: ReactNode;
+  addonBefore?: ReactNode;
+  defaultVal: string;
+  disabledWhenHasPhone?: boolean;
+};
+
 const { phone } = getRegExp();
 
 function PhoneLoginInput({
   prefix,
+  addonBefore,
   defaultVal,
   disabledWhenHasPhone,
-  disabledCaptchaInput,
-}: {
-  prefix?: ReactNode;
-  defaultVal: string;
-  disabledWhenHasPhone?: boolean;
-  disabledCaptchaInput?: boolean;
-}) {
+}: Props) {
   const [pnumber, setpNumber] = useState(defaultVal);
   const [isSend, setIsSend] = useState(false);
 
@@ -45,7 +47,7 @@ function PhoneLoginInput({
   }, [timer, countdown, btnRef]);
 
   const handleSend = useCallbackPlus(() => {
-    Message.success('验证码已发送');
+    message.success('验证码已发送');
   }, []).before(() => {
     if (timer.current) return false;
     setIsSend(true);
@@ -64,31 +66,32 @@ function PhoneLoginInput({
   return (
     <>
       <Form.Item
-        field='phoneNumber'
+        name='phoneNumber'
         rules={[
           {
             required: true,
-            match: phone,
+            pattern: phone,
             message: '请填写正确的手机号',
           },
-        ]}
-        disabled={disabledWhenHasPhone && !eq(defaultVal, '')}>
+        ]}>
         <Input
           type='number'
-          prefix={prefix || <IconPhone />}
+          addonBefore={addonBefore}
+          prefix={!addonBefore && (prefix || <PhoneOutlined />)}
           placeholder='手机号码'
-          onChange={setpNumber}
+          onChange={e => setpNumber(e.target.value)}
+          disabled={disabledWhenHasPhone && !eq(defaultVal, '')}
         />
       </Form.Item>
-      <Space align='baseline'>
+      <Space.Compact block>
         <Form.Item
-          field='code'
-          disabled={!phone.test(pnumber)}
+          name='code'
+          style={{ width: '35%' }}
           rules={[{ required: true, message: '请填写验证码' }]}>
           <Input
             type='number'
             placeholder='短信验证码'
-            style={{ width: 208 }}
+            disabled={!phone.test(pnumber)}
           />
         </Form.Item>
         <Button
@@ -98,7 +101,7 @@ function PhoneLoginInput({
           style={{ padding: '0 14px' }}>
           发送验证码
         </Button>
-      </Space>
+      </Space.Compact>
     </>
   );
 }

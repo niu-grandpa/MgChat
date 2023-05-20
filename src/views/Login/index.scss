@@ -1,10 +1,14 @@
+@import '@/assets/color.scss';
+
 .login {
   height: 100vh;
-  font-size: 12px;
+  background: $color-light;
 
   &-header {
     position: relative;
     height: 100px;
+    padding: 0;
+    background-color: $color-light;
     background-image: url('../../assets/icons/background.svg');
     background-size: cover;
   }
@@ -14,45 +18,27 @@
     top: 60%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border: 4px solid var(--color-primary-light-3);
-    box-shadow: 0 0 22px var(--color-primary-light-4);
+    border: 3px solid $color-primary-2;
+    box-shadow: 0 0 20px rgb(75, 157, 226);
     -webkit-app-region: no-drag;
+    pointer-events: none;
   }
 
   &-content {
-    padding-top: 18px;
-    padding-left: 68px;
+    padding: 18px 56px 0;
   }
 
   &-form {
-    margin: 0 auto;
     -webkit-app-region: no-drag;
-
-    .arco-form {
-      &-item {
-        margin-bottom: 0;
-      }
-    }
-
-    .arco-checkbox-text {
-      font-size: 12px;
-    }
-
-    .arco-input-inner-wrapper {
-      border: 1px solid var(--color-border-1);
-      background-color: #fff;
+    .ant-form-item {
+      margin-bottom: 14px;
     }
   }
 
   &-register {
     position: absolute;
-    bottom: 16px;
-    left: 16px;
+    font-size: 12px;
+    bottom: 8px;
+    left: 8px;
   }
-}
-
-.dropdown-menu-item {
-  height: auto;
-  line-height: 24px;
-  font-size: 13px;
 }

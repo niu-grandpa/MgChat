@@ -1,4 +1,4 @@
-import { Grid } from '@arco-design/web-react';
+import { Col, Row } from 'antd';
 import { ReactNode, memo } from 'react';
 import './index.scss';
 
@@ -11,8 +11,6 @@ type NavbarProps = {
     onClick: () => void;
   }>[];
 };
-
-const { Row, Col } = Grid;
 
 function Navbar({ items }: NavbarProps) {
   return (

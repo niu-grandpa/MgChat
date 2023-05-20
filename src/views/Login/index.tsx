@@ -5,26 +5,27 @@ import { useCallbackPlus } from '@/hooks';
 import { LoginData, LoginResponse } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import {
+  CloseOutlined,
+  DownOutlined,
+  MinusOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import {
   Button,
   Checkbox,
+  Col,
   Dropdown,
   Form,
   FormInstance,
-  Grid,
   Input,
   Layout,
-  Menu,
-  Message,
+  MenuProps,
+  Row,
   Space,
-} from '@arco-design/web-react';
-import {
-  IconClose,
-  IconDown,
-  IconMinus,
-  IconUser,
-} from '@arco-design/web-react/icon';
+  message,
+} from 'antd';
 import { ipcRenderer } from 'electron';
-import { eq, uniqBy } from 'lodash-es';
+import { eq, gt, uniqBy } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './index.scss';
@@ -33,7 +34,6 @@ type HistoryUsers = LoginResponse & LoginData;
 
 const { useForm, useWatch } = Form;
 const { Header, Content } = Layout;
-const { Row, Col } = Grid;
 const { pwd, phone } = getRegExp();
 
 function LoginView() {
@@ -42,7 +42,35 @@ function LoginView() {
   const [form] = useForm<LoginData>();
   const [arrow, setArrow] = useState(false);
   const [userIcon, setUserIcon] = useState('');
-  const [historyUsers, setHistoryList] = useState<HistoryUsers[]>([]);
+  const [historyUsers, setHistoryList] = useState<HistoryUsers[]>([
+    {
+      account: '1530254139226',
+      password: '123456789',
+      auto: true,
+      remember: true,
+      online: false,
+      nickname: '草泥',
+      icon: '',
+    },
+    {
+      account: '15302541396',
+      password: '123456789',
+      auto: true,
+      remember: true,
+      online: false,
+      nickname: '草泥',
+      icon: '',
+    },
+    {
+      account: '2864103063',
+      password: '123456789',
+      auto: true,
+      remember: true,
+      online: false,
+      nickname: '草泥',
+      icon: '',
+    },
+  ]);
 
   const account = useWatch('account', form as FormInstance);
   useEffect(() => {
@@ -72,7 +100,7 @@ function LoginView() {
     setArrow(v => !v);
     const { online, account } = findLocalUser(key);
     if (online) {
-      Message.warning(`您已登录 ${account}，不能重复登录`);
+      message.warning(`您已登录 ${account}，不能重复登录`);
       return false;
     }
   });
@@ -89,12 +117,24 @@ function LoginView() {
   }, [])
     .before(() => {
       const { account, password } = form.getFieldsValue();
-      if (eq(account!.length, 11) && !phone.test(account!)) {
-        Message.error('请输入正确的手机号码');
+      if (!account || !/^\w{9,11}$/.test(account)) {
+        message.error('请输入9~11位的账号');
+        return false;
+      }
+      if (
+        account[0] === '1' &&
+        gt(account.length, 9) &&
+        !phone.test(account!)
+      ) {
+        message.error('请输入正确的手机号码');
+        return false;
+      }
+      if (!password) {
+        message.error('请输入您的密码');
         return false;
       }
       if (!pwd.test(password!)) {
-        Message.error('无效的密码');
+        message.error('密码格式有误');
         return false;
       }
     })
@@ -103,7 +143,7 @@ function LoginView() {
       // 这里使用路由跳转而不是打开新窗口
       // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程
       // 因此只需要渲染路由界面和调整窗口大小位置即可
-      navigate('/user', { replace: true, state: { account: data.account } });
+      navigate('/user', { replace: true, state: data });
     });
 
   const handleForget = useCallback(() => {
@@ -113,6 +153,24 @@ function LoginView() {
     });
   }, []);
 
+  const userItems: MenuProps['items'] = historyUsers.map(
+    ({ nickname, account, icon }) => ({
+      key: account,
+      label: (
+        <Row align='middle' key={account}>
+          <Col flex='50px'>
+            <UAvatar size={38} {...{ icon }} />
+          </Col>
+          <Col flex='auto'>
+            <div>{nickname}</div>
+            <span style={{ color: '#a0a0a0' }}>{account}</span>
+          </Col>
+        </Row>
+      ),
+      onClick: () => handleUseHistory.invoke(account),
+    })
+  );
+
   return (
     <Layout className='login'>
       <Header className='login-header'>
@@ -120,12 +178,12 @@ function LoginView() {
           items={[
             {
               title: '最小化',
-              icon: <IconMinus />,
+              icon: <MinusOutlined />,
               onClick: () => ipcRenderer.send('min-win', 'main'),
             },
             {
               title: '关闭',
-              icon: <IconClose />,
+              icon: <CloseOutlined />,
               danger: true,
               onClick: () =>
                 ipcRenderer.send('close-win', { pathname: 'main' }),
@@ -139,55 +197,26 @@ function LoginView() {
           form={form}
           className='login-form'
           autoComplete='off'
-          validateTrigger='onSubmit'
-          onSubmit={handleLogin.invoke}
-          initialValues={{
-            account: '',
-            password: '',
-            auto: false,
-            remember: false,
-          }}>
+          onFinish={handleLogin.invoke}>
           <Dropdown
-            trigger='click'
-            popupVisible={arrow}
-            droplist={
-              <Menu
-                style={{ width: 269 }}
-                onClickMenuItem={handleUseHistory.invoke}>
-                {historyUsers?.map(({ nickname, account, icon }) => (
-                  <Menu.Item key={account} className='dropdown-menu-item'>
-                    <Row align='center'>
-                      <Col flex='50px'>
-                        <UAvatar size={32} {...{ icon }} />
-                      </Col>
-                      <Col flex='auto'>
-                        <p>{nickname}</p>
-                        <span style={{ color: '#a0a0a0' }}>{account}</span>
-                      </Col>
-                    </Row>
-                  </Menu.Item>
-                ))}
-              </Menu>
-            }>
-            <Form.Item
-              field='account'
-              rules={[
-                {
-                  required: true,
-                  minLength: 9,
-                  maxLength: 11,
-                  message: '请填写9-11位的账号',
-                },
-              ]}>
+            open={arrow}
+            trigger={['click']}
+            overlayStyle={{
+              maxHeight: 138,
+              overflowY: 'auto',
+              boxShadow: '0 0 2px 2px #F2F3F5',
+            }}
+            menu={{ items: userItems }}>
+            <Form.Item name='account'>
               <Input
                 type='number'
-                prefix={<IconUser />}
+                prefix={<UserOutlined />}
                 suffix={
-                  <IconDown
+                  <DownOutlined
                     onClick={() => setArrow(v => !v)}
                     style={{
-                      rotate: `${arrow ? 180 : 0}deg`,
                       cursor: 'pointer',
+                      rotate: `${arrow ? 180 : 0}deg`,
                     }}
                   />
                 }
@@ -195,13 +224,13 @@ function LoginView() {
               />
             </Form.Item>
           </Dropdown>
-          <PwdFormInput field='password' />
-          <Form.Item>
+          <PwdFormInput name='password' />
+          <Form.Item style={{ marginBottom: 0 }}>
             <Space size='large'>
-              <Form.Item field='auto' triggerPropName='checked'>
+              <Form.Item name='auto' valuePropName='checked'>
                 <Checkbox>自动登录</Checkbox>
               </Form.Item>
-              <Form.Item field='remember' triggerPropName='checked'>
+              <Form.Item name='remember' valuePropName='checked'>
                 <Checkbox>记住密码</Checkbox>
               </Form.Item>
               <Form.Item>
@@ -209,13 +238,8 @@ function LoginView() {
               </Form.Item>
             </Space>
           </Form.Item>
-          <Form.Item style={{ marginTop: 6 }}>
-            <Button
-              size='default'
-              htmlType='submit'
-              shape='round'
-              long
-              type='primary'>
+          <Form.Item className='login-form-btn'>
+            <Button htmlType='submit' block type='primary'>
               登录
             </Button>
           </Form.Item>

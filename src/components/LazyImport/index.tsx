@@ -1,4 +1,5 @@
-import { Spin } from '@arco-design/web-react';
+import { LoadingOutlined } from '@ant-design/icons';
+import { Spin } from 'antd';
 import { Suspense, lazy, memo } from 'react';
 
 function Lazy(props: { comp: () => Promise<any> }) {
@@ -6,7 +7,10 @@ function Lazy(props: { comp: () => Promise<any> }) {
   return (
     <Suspense
       fallback={
-        <Spin size={40} loading style={{ display: 'block' }}>
+        <Spin
+          spinning
+          size='large'
+          indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />}>
           <section style={{ width: '100vw', height: '100vh' }} />
         </Spin>
       }>

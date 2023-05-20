@@ -1,12 +1,9 @@
+@import '@/assets/color.scss';
+
 .forget {
   height: 100vh;
   padding: 52px 146px;
-
-  .arco-steps-label-horizontal:not(.arco-steps-vertical)
-    > .arco-steps-item:not(:last-child)
-    .arco-steps-item-title::after {
-    background-color: var(--color-border-4);
-  }
+  background: $color-light;
 
   &-form {
     width: 400px;

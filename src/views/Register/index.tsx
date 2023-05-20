@@ -3,28 +3,20 @@ import PhoneLoginFormInput from '@/components/PhoneLoginInput';
 import PwdFormInput from '@/components/PwdInput';
 import { useCallbackPlus } from '@/hooks';
 import { ResisterData } from '@/services/typing';
-import {
-  Button,
-  Form,
-  Input,
-  Layout,
-  Spin,
-  Typography,
-} from '@arco-design/web-react';
-import { IconUser } from '@arco-design/web-react/icon';
+import { UserOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Layout, Spin, Typography } from 'antd';
 import { useState } from 'react';
 import Success from './Success';
 import './index.scss';
 
 const { Header, Content } = Layout;
-const { useForm, useWatch } = Form;
+const { useForm } = Form;
 const { Title } = Typography;
 
 function RegisterView() {
   const [form] = useForm<ResisterData>();
-
-  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [spinning, setSpinning] = useState(false);
 
   const handleSubmit = useCallbackPlus<string>(async (values: ResisterData) => {
     // @ts-ignore
@@ -36,17 +28,17 @@ function RegisterView() {
     });
   }, [])
     .before(async ({ code }: ResisterData) => {
-      setLoading(true);
+      setSpinning(true);
       // todo 判断验证码是否过期
     })
     .after(account => {
       form.setFieldsValue({ account });
-      setLoading(false);
+      setSpinning(false);
       setSuccess(v => !v);
     });
 
   return (
-    <Spin dot {...{ loading }} style={{ display: 'block' }}>
+    <Spin {...{ spinning }} style={{ display: 'block' }}>
       {success ? (
         <Success data={form.getFieldsValue()} />
       ) : (
@@ -57,37 +49,37 @@ function RegisterView() {
           </Header>
           <Content className='reg-content'>
             <section className='reg-content-form'>
-              <Title heading={2}>欢迎注册</Title>
-              <Title heading={6}>噼里啪啦，像机枪一样聊不停!</Title>
+              <Title level={2}>欢迎注册</Title>
+              <Title level={5}>噼里啪啦，像机枪一样聊不停!</Title>
               <Form
                 size='large'
                 form={form}
                 validateTrigger={['onFocus', 'onBlur']}
-                onSubmit={handleSubmit.invoke}>
+                onFinish={handleSubmit.invoke}>
                 <Form.Item
-                  field='nickname'
+                  name='nickname'
                   rules={[
                     {
+                      type: 'string',
                       required: true,
-                      minLength: 1,
+                      min: 1,
                       message: '昵称不可以为空',
                     },
                   ]}>
-                  <Input placeholder='昵称' prefix={<IconUser />} />
+                  <Input placeholder='昵称' prefix={<UserOutlined />} />
                 </Form.Item>
                 <PwdFormInput
                   match
                   double
                   showTip
-                  tipPosition='left'
-                  password={() => form.getFieldValue('password') as string}
+                  password={() => form.getFieldValue('password')}
                 />
                 <PhoneLoginFormInput defaultVal='' />
-                <Form.Item hidden field='account'>
+                <Form.Item hidden name='account'>
                   <Input />
                 </Form.Item>
                 <Form.Item>
-                  <Button long type='primary' htmlType='submit'>
+                  <Button block type='primary' htmlType='submit'>
                     立即注册
                   </Button>
                 </Form.Item>
