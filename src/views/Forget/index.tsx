@@ -33,8 +33,13 @@ function Forget() {
     // todo
     console.log(values);
     setCurrent(v => ++v);
-  }, []).before(({ code }: ChangePassword) => {
+  }, []).before(({ phoneNumber, code }: ChangePassword) => {
     if (eq(current, 0)) {
+      if (
+        !checkCode.associate(phoneNumber, code) ||
+        checkCode.expired(phoneNumber, code)
+      )
+        return false;
     }
   });
 

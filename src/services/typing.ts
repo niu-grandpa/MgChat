@@ -28,3 +28,10 @@ export type ChangePassword = {
   password: string;
   code: string;
 };
+
+/**获取验证码 */
+export type VerificationCode = {
+  phoneNumber: string;
+  code: string;
+  endTime: number;
+};

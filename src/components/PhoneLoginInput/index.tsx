@@ -1,11 +1,12 @@
-import { useCallbackPlus } from '@/hooks';
+import { useCallbackPlus, useCheckVerificationCode } from '@/hooks';
+import { VerificationCode } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import { PhoneOutlined } from '@ant-design/icons';
-import { Button, Form, Input, message, Space } from 'antd';
+import { Button, Form, Input, Space, message } from 'antd';
 import { eq } from 'lodash-es';
 import {
-  memo,
   ReactNode,
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -27,12 +28,24 @@ function PhoneLoginInput({
   defaultVal,
   disabledWhenHasPhone,
 }: Props) {
+  const { set: setCode, createMap } = useCheckVerificationCode();
+
   const [pnumber, setpNumber] = useState(defaultVal);
   const [isSend, setIsSend] = useState(false);
 
   const btnRef = useRef<HTMLElement>(null);
   const countdown = useRef(59);
   const timer = useRef<NodeJS.Timer | null>(null);
+
+  useEffect(() => {
+    createMap();
+    return () => {
+      if (timer.current) {
+        clearInterval(timer.current);
+        timer.current = null;
+      }
+    };
+  }, []);
 
   const timing = useCallback(() => {
     if (countdown.current <= 0) {
@@ -46,22 +59,23 @@ function PhoneLoginInput({
     btnRef.current!.innerText = `已发送 ${countdown.current--}s`;
   }, [timer, countdown, btnRef]);
 
-  const handleSend = useCallbackPlus(() => {
-    message.success('验证码已发送');
-  }, []).before(() => {
-    if (timer.current) return false;
-    setIsSend(true);
-    timer.current = setInterval(timing, 1000);
-  });
-
-  useEffect(() => {
-    return () => {
-      if (timer.current) {
-        clearInterval(timer.current);
-        timer.current = null;
-      }
+  const handleSend = useCallbackPlus<VerificationCode>(() => {
+    // todo 发送验证码 & 返回验证码+手机
+    return {
+      phoneNumber: '15302541396',
+      code: '1234',
+      endTime: Date.now() + 10000,
     };
-  }, []);
+  }, [])
+    .before(() => {
+      if (timer.current) return false;
+      setIsSend(true);
+      message.success('验证码已发送');
+      timer.current = setInterval(timing, 1000);
+    })
+    .after(({ phoneNumber, code, endTime }) => {
+      setCode(phoneNumber, code, endTime);
+    });
 
   return (
     <>
