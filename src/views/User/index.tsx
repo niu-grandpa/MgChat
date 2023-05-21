@@ -3,7 +3,7 @@ import { useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 function UserPanel() {
-  const { state } = useLocation();
+  const { state } = useLocation() as { state: { account: string } };
 
   const changeWinShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
@@ -23,7 +23,7 @@ function UserPanel() {
     changeWinShape();
   }, [state]);
 
-  return <>{state.userId}</>;
+  return <>{state.account}</>;
 }
 
 export default UserPanel;

@@ -4,6 +4,14 @@
   height: 100vh;
   background: $color-light;
 
+  &-banner {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+  }
+
   &-header {
     position: relative;
     height: 100px;
@@ -25,10 +33,11 @@
   }
 
   &-content {
-    padding: 18px 56px 0;
+    padding: 18px 58px 0;
   }
 
   &-form {
+    width: 280px;
     -webkit-app-region: no-drag;
     .ant-form-item {
       margin-bottom: 14px;
