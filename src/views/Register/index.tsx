@@ -49,8 +49,8 @@ function RegisterView() {
           </Header>
           <Content className='reg-content'>
             <section className='reg-content-form'>
-              <Title level={2}>欢迎注册</Title>
-              <Title level={5}>噼里啪啦，像机枪一样聊不停!</Title>
+              <Title level={1}>欢迎注册</Title>
+              <Title level={4}>沟通，乐在每一天!</Title>
               <Form
                 size='large'
                 form={form}

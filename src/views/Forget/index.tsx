@@ -3,7 +3,8 @@ import PwdInput from '@/components/PwdInput';
 import { useCallbackPlus, useCheckVerificationCode } from '@/hooks';
 import { ChangePassword } from '@/services/typing';
 import { getRegExp } from '@/utils';
-import { Button, Form, Result, Steps } from 'antd';
+import { Button, Form, Result, Space, Steps } from 'antd';
+import { ipcRenderer } from 'electron';
 import { eq } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -17,29 +18,26 @@ function Forget() {
   const [search] = useSearchParams();
   const checkCode = useCheckVerificationCode();
 
-  const account = useMemo(() => {
-    const val = search.get('account');
-    if (val && phone.test(val)) return val;
-    return '';
-  }, [search]);
-
   const [current, setCurrent] = useState(0);
 
-  const handleNext = useCallbackPlus((val: number) => {
-    setCurrent(val);
-  }, []).before(() => {});
+  const account = useMemo(() => {
+    const val = search.get('account') || form.getFieldValue('phoneNumber');
+    if (val && phone.test(val)) return val;
+    return '';
+  }, [search, form]);
+
+  const display = useMemo(
+    () => (i: number) => eq(current, i) ? '' : 'none',
+    [current]
+  );
 
   const handleSubmit = useCallbackPlus((values: ChangePassword) => {
     // todo
     console.log(values);
     setCurrent(v => ++v);
   }, []).before(({ phoneNumber, code }: ChangePassword) => {
-    if (eq(current, 0)) {
-      if (
-        !checkCode.associate(phoneNumber, code) ||
-        checkCode.expired(phoneNumber, code)
-      )
-        return false;
+    if (eq(current, 0) && !checkCode.isValid(phoneNumber, code)) {
+      return false;
     }
   });
 
@@ -47,7 +45,6 @@ function Forget() {
     <main className='forget'>
       <Steps
         current={current}
-        onChange={handleNext.invoke}
         items={[
           { title: '验证身份' },
           { title: '设置密码' },
@@ -61,29 +58,51 @@ function Forget() {
           form={form}
           initialValues={{ phoneNumber: account }}
           onFinish={handleSubmit.invoke}>
-          {eq(current, 0) ? (
+          <div style={{ display: display(0) }}>
             <PhoneLoginFormInput
               defaultVal={account}
               disabledWhenHasPhone
               addonBefore='原手机号'
             />
-          ) : eq(current, 1) ? (
+          </div>
+          <div style={{ display: display(1) }}>
             <PwdInput
-              match
               showTip
               double
               placeholder='新的密码'
+              match={!display(1)}
               password={() => form.getFieldValue('password')}
             />
-          ) : null}
+          </div>
           <Form.Item>
-            <Button htmlType='submit' block type='primary'>
-              下一步
-            </Button>
+            {!display(1) ? (
+              <Space>
+                <Button onClick={() => setCurrent(v => --v)}>上一步</Button>
+                <Button style={{ width: 310 }} htmlType='submit' type='primary'>
+                  下一步
+                </Button>
+              </Space>
+            ) : (
+              <Button block htmlType='submit' type='primary'>
+                下一步
+              </Button>
+            )}
           </Form.Item>
         </Form>
       ) : (
-        <Result status='success' title='修改成功' />
+        <Result
+          status='success'
+          title='修改成功'
+          extra={
+            <Button
+              type='primary'
+              onClick={() =>
+                ipcRenderer.send('close-win', { pathname: 'forget' })
+              }>
+              关闭
+            </Button>
+          }
+        />
       )}
     </main>
   );

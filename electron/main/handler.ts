@@ -6,26 +6,6 @@ import {
   screen,
 } from 'electron';
 
-export function loadFile({
-  win,
-  pathname,
-  indexHtml,
-}: {
-  win: BrowserWindow | null;
-  pathname: string;
-  indexHtml: string;
-}) {
-  const url = process.env.VITE_DEV_SERVER_URL;
-  if (url) {
-    // 用于加载路由页面
-    win?.loadURL(`${url}${pathname}`);
-    // Open devTool if the app is not packaged
-    win?.webContents.openDevTools();
-  } else {
-    win?.loadFile(indexHtml, pathname ? { hash: pathname } : {});
-  }
-}
-
 export default function winHandler(config: {
   preload: string;
   indexHtml: string;
@@ -48,13 +28,14 @@ export default function winHandler(config: {
   });
 
   // 创建子窗口，渲染的视图对应路由表配置的路由路径
-  function createChildWindow(
+  async function createChildWindow(
     _: IpcMainInvokeEvent,
     args: {
       pathname: string;
+      search?: string;
     } & BrowserWindowConstructorOptions
   ) {
-    const { pathname, ...rest } = args;
+    const { pathname, search, ...rest } = args;
     const childWindow = new BrowserWindow({
       ...rest,
       parent: win!,
@@ -66,9 +47,8 @@ export default function winHandler(config: {
         contextIsolation: false,
       },
     });
-
     map.set(pathname, childWindow);
-    loadFile({ win: childWindow, pathname, indexHtml });
+    loadFile({ win: childWindow, pathname, indexHtml, search });
     childWindow.on('ready-to-show', childWindow.show);
   }
 
@@ -78,16 +58,22 @@ export default function winHandler(config: {
   ) {
     const { pathname, destroy, onClose } = args;
 
+    if (pathname === 'main') {
+      config.win = null;
+      const allWindows = BrowserWindow.getAllWindows();
+      allWindows.forEach(child => child.close());
+    }
     if (!map.has(pathname)) return;
     const currentWin = map.get(pathname)!;
+
     if (destroy) {
       currentWin.destroy();
     } else {
       onClose && currentWin.on('close', onClose);
       currentWin.close();
     }
+
     map.delete(pathname);
-    if (pathname === 'main') config.win = null;
   }
 
   // x坐标不需要传递，由屏幕宽度减去给定窗口宽度计算得出
@@ -109,12 +95,34 @@ export default function winHandler(config: {
   ) {
     const { pathname, width, height, maxWidth, maxHeight, resizable } = args;
 
-    const cur = map.get(pathname)!;
-    cur.setSize(width!, height!, true);
+    const currentWin = map.get(pathname)!;
+    currentWin.setSize(width!, height!, true);
 
-    const [mw, mh] = cur.getMaximumSize();
-    maxWidth && cur.setMaximumSize(mw, maxWidth);
-    maxHeight && cur.setMaximumSize(mh, maxHeight);
-    resizable && cur.setResizable(resizable);
+    const [mw, mh] = currentWin.getMaximumSize();
+    maxWidth && currentWin.setMaximumSize(mw, maxWidth);
+    maxHeight && currentWin.setMaximumSize(mh, maxHeight);
+    resizable && currentWin.setResizable(resizable);
+  }
+}
+
+export function loadFile({
+  win,
+  pathname,
+  indexHtml,
+  search,
+}: {
+  win: BrowserWindow | null;
+  pathname: string;
+  indexHtml: string;
+  search?: string;
+}) {
+  const url = process.env.VITE_DEV_SERVER_URL;
+  if (url) {
+    // 用于加载路由页面
+    win?.loadURL(`${url}${pathname}${search ?? ''}`);
+    // Open devTool if the app is not packaged
+    win?.webContents.openDevTools();
+  } else {
+    win?.loadFile(indexHtml, pathname ? { hash: pathname } : {});
   }
 }

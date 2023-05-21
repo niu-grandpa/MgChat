@@ -147,9 +147,11 @@ function LoginView() {
     });
 
   const handleForget = useCallback(() => {
+    const account = form.getFieldValue('account');
     ipcRenderer.send('open-win', {
-      pathname: `forget?account=${form.getFieldValue('account')}`,
+      pathname: 'forget',
       title: '找回密码',
+      search: !account ? '' : `?account=${account}`,
     });
   }, []);
 

@@ -13,6 +13,12 @@ let map: MapType;
 /**检查手机验证码是否过期 */
 export function useCheckVerificationCode() {
   return {
+    createMap() {
+      map === undefined && (map = new Map());
+    },
+    isValid(key: string, val: string): boolean {
+      return this.associate(key, val) && !this.expired(key, val);
+    },
     set(key: string, val: string, time: number) {
       if (!map.has(key)) map.set(key, { code: new Set(), endTime: new Set() });
       const { code, endTime } = map.get(key)!;
@@ -43,16 +49,13 @@ export function useCheckVerificationCode() {
       }
       const { code } = map.get(key)!;
       if (!code.has(val)) {
-        message.error('验证码不存在');
+        message.error('验证码错误');
         return false;
       }
       return true;
     },
     clear() {
       map.clear();
-    },
-    createMap() {
-      map === undefined && (map = new Map());
     },
   };
 }

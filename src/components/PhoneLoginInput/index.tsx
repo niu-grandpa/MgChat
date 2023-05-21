@@ -9,6 +9,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -30,12 +31,14 @@ function PhoneLoginInput({
 }: Props) {
   const { set: setCode, createMap } = useCheckVerificationCode();
 
-  const [pnumber, setpNumber] = useState(defaultVal);
   const [isSend, setIsSend] = useState(false);
+  const [pnumber, setpNumber] = useState(defaultVal);
 
-  const btnRef = useRef<HTMLElement>(null);
   const countdown = useRef(59);
+  const btnRef = useRef<HTMLElement>(null);
   const timer = useRef<NodeJS.Timer | null>(null);
+
+  const disabled = useMemo(() => !phone.test(pnumber), [pnumber]);
 
   useEffect(() => {
     createMap();
@@ -64,7 +67,7 @@ function PhoneLoginInput({
     return {
       phoneNumber: '15302541396',
       code: '1234',
-      endTime: Date.now() + 10000,
+      endTime: Date.now() + 120000,
     };
   }, [])
     .before(() => {
@@ -100,17 +103,13 @@ function PhoneLoginInput({
       <Space.Compact block>
         <Form.Item
           name='code'
-          style={{ width: '35%' }}
+          style={{ width: '40%' }}
           rules={[{ required: true, message: '请填写验证码' }]}>
-          <Input
-            type='number'
-            placeholder='短信验证码'
-            disabled={!phone.test(pnumber)}
-          />
+          <Input type='number' placeholder='短信验证码' {...{ disabled }} />
         </Form.Item>
         <Button
           ref={btnRef}
-          disabled={isSend || !phone.test(pnumber)}
+          disabled={isSend || disabled}
           onClick={handleSend.invoke}
           style={{ padding: '0 14px' }}>
           发送验证码
