@@ -17,8 +17,8 @@ export default function winHandler(config: {
   // New window example arg: new windows url
   ipcMain.on('open-win', createChildWindow);
   ipcMain.on('close-win', closeWindow);
-  ipcMain.on('resize-win', setWinSize);
-  ipcMain.on('set-position', setPosition);
+  ipcMain.once('resize-win', setWinSize);
+  ipcMain.once('set-position', setPosition);
   ipcMain.on('min-win', (_: IpcMainInvokeEvent, pathname: string) => {
     map.get(pathname)?.minimize();
   });
@@ -80,11 +80,15 @@ export default function winHandler(config: {
   // 手动调整即可，确保在不同屏幕下位置正确
   function setPosition(
     _: IpcMainInvokeEvent,
-    args: { pathname: string; y: number; marginRight: number }
+    args: { pathname: string; y: number; marginRight: number; center: boolean }
   ) {
-    const { y, pathname, marginRight } = args;
+    const { y, center, pathname, marginRight } = args;
+    if (center) {
+      map.get(pathname)?.center();
+      return;
+    }
     const { width } = screen.getPrimaryDisplay().workAreaSize;
-    map.get(pathname)!.setPosition(width - marginRight, y, true);
+    map.get(pathname)?.setPosition(width - marginRight, y, true);
   }
 
   function setWinSize(

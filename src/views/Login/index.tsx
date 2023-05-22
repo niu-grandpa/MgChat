@@ -5,9 +5,8 @@ import { useSleep as sleep, useCallbackPlus, useOnline } from '@/hooks';
 import { LoginData, LoginResponse } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import {
-  CloseOutlined,
   DownOutlined,
-  MinusOutlined,
+  Loading3QuartersOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import {
@@ -93,7 +92,7 @@ function LoginView() {
   const handleLogin = useCallbackPlus<HistoryUsers>(
     async (values: LoginData) => {
       console.log(values);
-      await sleep(5000);
+      await sleep(1000);
       // todo
       return {
         nickname: '王五',
@@ -174,25 +173,14 @@ function LoginView() {
           message='当前网络未连接，请检查网络后重试'
         />
       )}
-      <Spin {...{ spinning }} size='large' tip='登录中...'>
+      <Spin
+        {...{ spinning }}
+        size='large'
+        tip='登录中...'
+        indicator={<Loading3QuartersOutlined spin />}>
         <Layout className='login'>
           <Header className='login-header'>
-            <NavBar
-              items={[
-                {
-                  title: '最小化',
-                  icon: <MinusOutlined />,
-                  onClick: () => ipcRenderer.send('min-win', 'main'),
-                },
-                {
-                  title: '关闭',
-                  icon: <CloseOutlined />,
-                  danger: true,
-                  onClick: () =>
-                    ipcRenderer.send('close-win', { pathname: 'main' }),
-                },
-              ]}
-            />
+            <NavBar />
             <UAvatar icon={userIcon} size={64} className='login-avatar' />
           </Header>
           <Content className='login-content'>

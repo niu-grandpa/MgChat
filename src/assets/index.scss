@@ -33,3 +33,26 @@ input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/*滚动条整体样式*/
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  margin-left: 16px;
+}
+
+/*滚动条里面轨道*/
+::-webkit-scrollbar-track {
+  border-radius: 2px;
+}
+
+/*滚动条里面小方块*/
+::-webkit-scrollbar-thumb {
+  background: $color-border-4;
+  border-radius: 10px;
+}
+
+ul {
+  list-style-type: none;
+}
