@@ -1,4 +1,5 @@
 import UAvatar from '@/components/Avatar';
+import NavBar from '@/components/NavBar';
 import {
   LogoutOutlined,
   MessageOutlined,
@@ -37,21 +38,28 @@ function UserPanel() {
 
   return (
     <Layout className='user'>
-      <Sider width={251} className='user-main'></Sider>
+      <Sider width={251} className='user-main'>
+        <div className='user-main-nav'>
+          <NavBar />
+        </div>
+      </Sider>
       <Sider width={52} className='user-siderbar'>
-        <UAvatar
-          size={38}
-          onClick={() => {
-            ipcRenderer.send('open-win', {
-              pathname: 'chat',
-              title: '聊天',
-              frame: false,
-              alive: true,
-              width: 580,
-              height: 520,
-            });
-          }}
-        />
+        <div>
+          <UAvatar
+            size='large'
+            onClick={() => {
+              ipcRenderer.send('open-win', {
+                pathname: 'chat',
+                title: '聊天',
+                frame: false,
+                alive: true,
+                width: 580,
+                height: 520,
+              });
+            }}
+          />
+          <Badge status='success' className='user-siderbar-status' />
+        </div>
         <Space wrap className='user-siderbar-space'>
           <Badge count={0} dot offset={[-10, 10]}>
             <Button type='text' size='large' icon={<MessageOutlined />} />

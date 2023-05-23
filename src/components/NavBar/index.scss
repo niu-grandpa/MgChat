@@ -13,16 +13,19 @@
     user-select: none;
     -webkit-app-region: no-drag;
 
+    .anticon {
+      color: $color-light;
+    }
+
     &:hover {
       background-color: rgba($color: $color-light, $alpha: 0.2);
     }
 
     &.hover-red:hover {
+      .anticon {
+        color: $color-light;
+      }
       background-color: $color-danger-2;
-    }
-
-    .anticon {
-      color: $color-light;
     }
   }
 }

@@ -7,6 +7,12 @@
     border-right: 1px solid $color-border-3;
     background-color: $color-border-2 !important;
     -webkit-app-region: no-drag;
+
+    &-nav {
+      .anticon {
+        color: $color-text-1;
+      }
+    }
   }
 
   &-siderbar {
@@ -14,11 +20,23 @@
     padding: 24px 0;
     background: $background-3 !important;
     color: $color-light;
-    -webkit-app-region: no-drag;
+
+    &-status {
+      position: absolute;
+      top: 48px;
+      right: 6px;
+
+      &.ant-badge-status .ant-badge-status-dot {
+        width: 8px;
+        height: 8px;
+      }
+    }
 
     &-space {
       padding: 0 6px;
-      margin-top: 32px;
+      margin-top: 28px;
+      -webkit-app-region: no-drag;
+
       .logout {
         position: absolute;
         bottom: 8px;
