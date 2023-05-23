@@ -28,7 +28,7 @@ import {
 import { ipcRenderer } from 'electron';
 import { eq, gt, uniqBy } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './index.scss';
 
 export type HistoryUsers = LoginResponse & LoginData;
@@ -39,8 +39,10 @@ const { pwd, phone } = getRegExp();
 
 function LoginView() {
   const navigate = useNavigate();
+  const location = useLocation();
   const isOnline = useOnline();
   const [form] = useForm<LoginData>();
+
   const [arrow, setArrow] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [userIcon, setUserIcon] = useState('');
@@ -134,6 +136,7 @@ function LoginView() {
       // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程
       // 因此只需要渲染路由界面和调整窗口大小位置即可
       navigate('/user', { replace: true, state: { account: data.account } });
+      location.pathname = 'user';
     });
 
   const handleForget = useCallback(() => {

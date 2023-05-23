@@ -19,4 +19,8 @@ export default [
     path: '/forget',
     element: <LazyImport comp={() => import('@/views/Forget')} />,
   },
+  {
+    path: '/chat',
+    element: <LazyImport comp={() => import('@/views/User/Chat')} />,
+  },
 ] as RouteObject[];

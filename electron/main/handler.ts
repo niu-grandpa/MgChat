@@ -17,25 +17,38 @@ export default function winHandler(config: {
   // New window example arg: new windows url
   ipcMain.on('open-win', createChildWindow);
   ipcMain.on('close-win', closeWindow);
-  ipcMain.once('resize-win', setWinSize);
-  ipcMain.once('set-position', setPosition);
-  ipcMain.on('min-win', (_: IpcMainInvokeEvent, pathname: string) => {
-    map.get(pathname)?.minimize();
-  });
-  ipcMain.on('max-min', (_: IpcMainInvokeEvent, pathname: string) => {
-    const currentWin = map.get(pathname);
-    currentWin?.isMaximized() ? currentWin.restore() : currentWin?.maximize();
-  });
+  ipcMain.on('resize-win', setWinSize);
+  ipcMain.on('set-position', setPosition);
+  ipcMain.on(
+    'min-win',
+    (_: IpcMainInvokeEvent, { pathname }: { pathname: string }) => {
+      map.get(pathname)?.minimize();
+    }
+  );
+  ipcMain.on(
+    'max-win',
+    (_: IpcMainInvokeEvent, { pathname }: { pathname: string }) => {
+      const currentWin = map.get(pathname);
+      currentWin?.isMaximized() ? currentWin.restore() : currentWin?.maximize();
+    }
+  );
 
   // 创建子窗口，渲染的视图对应路由表配置的路由路径
   async function createChildWindow(
     _: IpcMainInvokeEvent,
     args: {
       pathname: string;
+      alive?: boolean;
       search?: string;
     } & BrowserWindowConstructorOptions
   ) {
-    const { pathname, search, ...rest } = args;
+    const { pathname, alive, search, ...rest } = args;
+
+    if (alive && map.has(pathname)) {
+      map.get(pathname)!.show();
+      return;
+    }
+
     const childWindow = new BrowserWindow({
       ...rest,
       parent: win!,
@@ -47,6 +60,7 @@ export default function winHandler(config: {
         contextIsolation: false,
       },
     });
+
     map.set(pathname, childWindow);
     loadFile({ win: childWindow, pathname, indexHtml, search });
     childWindow.on('ready-to-show', childWindow.show);
@@ -54,9 +68,14 @@ export default function winHandler(config: {
 
   function closeWindow(
     _: IpcMainInvokeEvent,
-    args: { pathname: string; destroy?: boolean; onClose?: () => void }
+    args: {
+      pathname: string;
+      keepAlive?: boolean;
+      destroy?: boolean;
+      onClose?: () => void;
+    }
   ) {
-    const { pathname, destroy, onClose } = args;
+    const { pathname, keepAlive, destroy, onClose } = args;
 
     if (pathname === 'main') {
       config.win = null;
@@ -68,12 +87,14 @@ export default function winHandler(config: {
 
     if (destroy) {
       currentWin.destroy();
+    } else if (keepAlive) {
+      currentWin.hide();
     } else {
       onClose && currentWin.on('close', onClose);
       currentWin.close();
     }
 
-    map.delete(pathname);
+    !keepAlive && map.delete(pathname);
   }
 
   // x坐标不需要传递，由屏幕宽度减去给定窗口宽度计算得出

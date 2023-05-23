@@ -3,13 +3,13 @@ import {
   ScissorOutlined,
   SmileOutlined,
 } from '@ant-design/icons';
-import { Button, Col, Input, Row } from 'antd';
+import { Button, Col, Input, Layout, Row } from 'antd';
 import { memo } from 'react';
 
-function InputContent() {
+function ChatInput() {
   return (
-    <>
-      <Row className='content-footer-tools' gutter={[32, 0]}>
+    <Layout.Footer className='chat-footer'>
+      <Row className='chat-footer-tools' gutter={[32, 0]}>
         <Col span={1} title='表情'>
           <SmileOutlined />
         </Col>
@@ -25,11 +25,11 @@ function InputContent() {
         placeholder='输入聊天内容'
         autoSize={{ minRows: 3, maxRows: 4 }}
       />
-      <Button size='small' type='primary' className='content-footer-send'>
+      <Button size='small' type='primary' className='chat-footer-send'>
         发送
       </Button>
-    </>
+    </Layout.Footer>
   );
 }
 
-export default memo(InputContent);
+export default memo(ChatInput);

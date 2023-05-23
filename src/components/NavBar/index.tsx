@@ -20,7 +20,7 @@ function Navbar({ items }: NavbarProps) {
       {
         title: '最小化',
         icon: <MinusOutlined />,
-        onClick: () => ipcRenderer.send('min-win', 'main'),
+        onClick: () => ipcRenderer.send('min-win', { pathname: 'main' }),
       },
       {
         title: '关闭',

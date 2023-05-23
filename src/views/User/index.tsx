@@ -1,14 +1,18 @@
 import UAvatar from '@/components/Avatar';
-import { Layout } from 'antd';
+import {
+  LogoutOutlined,
+  MessageOutlined,
+  PlusOutlined,
+  UserOutlined,
+  UsergroupDeleteOutlined,
+} from '@ant-design/icons';
+import { Badge, Button, Layout, Space } from 'antd';
 import { ipcRenderer } from 'electron';
 import { useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import ContentDisplay from './ContentDisplay';
-import ContentHeader from './ContentHeader';
-import InputContent from './InputContent';
 import './index.scss';
 
-const { Header, Content, Sider, Footer } = Layout;
+const { Sider } = Layout;
 
 function UserPanel() {
   const { state } = useLocation() as { state: { account: string } };
@@ -16,13 +20,14 @@ function UserPanel() {
   const changeWinShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
       pathname: 'main',
-      width: 875,
-      height: 620,
+      width: 300,
+      height: 660,
       resizable: true,
     });
     ipcRenderer.send('set-position', {
       pathname: 'main',
-      center: true,
+      marginRight: 320,
+      y: 60,
     });
   }, []);
 
@@ -31,24 +36,45 @@ function UserPanel() {
   }, [state]);
 
   return (
-    <Layout className='main'>
-      <Sider width={62} theme='light' className='sider-first'>
-        <UAvatar size='large' />
+    <Layout className='user'>
+      <Sider width={251} className='user-main'></Sider>
+      <Sider width={52} className='user-siderbar'>
+        <UAvatar
+          size={38}
+          onClick={() => {
+            ipcRenderer.send('open-win', {
+              pathname: 'chat',
+              title: '聊天',
+              frame: false,
+              alive: true,
+              width: 580,
+              height: 520,
+            });
+          }}
+        />
+        <Space wrap className='user-siderbar-space'>
+          <Badge count={0} dot offset={[-10, 10]}>
+            <Button type='text' size='large' icon={<MessageOutlined />} />
+          </Badge>
+          <Badge count={0} dot offset={[-10, 10]}>
+            <Button type='text' size='large' icon={<UserOutlined />} />
+          </Badge>
+          <Badge count={0} dot offset={[-10, 10]}>
+            <Button
+              type='text'
+              size='large'
+              icon={<UsergroupDeleteOutlined />}
+            />
+          </Badge>
+          <Button type='text' size='large' icon={<PlusOutlined />} />
+          <Button
+            type='text'
+            size='large'
+            icon={<LogoutOutlined />}
+            className='logout'
+          />
+        </Space>
       </Sider>
-      <Layout>
-        <Sider width={230} className='sider-second'></Sider>
-        <Layout className='content'>
-          <Header className='content-header'>
-            <ContentHeader />
-          </Header>
-          <Content className='content-display'>
-            <ContentDisplay />
-          </Content>
-          <Footer className='content-footer'>
-            <InputContent />
-          </Footer>
-        </Layout>
-      </Layout>
     </Layout>
   );
 }
