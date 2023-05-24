@@ -1,79 +1,66 @@
-import { Badge, List, message } from 'antd';
-import { ipcRenderer } from 'electron';
+import { ManOutlined, WomanOutlined } from '@ant-design/icons';
+import { Badge, List } from 'antd';
+import { eq } from 'lodash';
 import VirtualList from 'rc-virtual-list';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback } from 'react';
 import UAvatar from '../Avatar';
 import './index.scss';
 
-interface UserItem {
-  email: string;
-  gender: string;
-  name: {
-    first: string;
-    last: string;
-    title: string;
-  };
-  nat: string;
-  picture: {
-    large: string;
-    medium: string;
-    thumbnail: string;
-  };
-}
+type Props = {
+  type: 'message' | 'user' | 'group';
+  data: any[];
+  onItemDbClick?: () => void;
+};
 
-const fakeDataUrl =
-  'https://randomuser.me/api/?results=20&inc=name,gender,email,nat,picture&noinfo';
 const ContainerHeight = 660 - 36;
 
-type Props = {};
-
-function UserList({}: Props) {
-  const [data, setData] = useState<UserItem[]>([]);
-
-  const appendData = () => {
-    fetch(fakeDataUrl)
-      .then(res => res.json())
-      .then(body => {
-        setData(data.concat(body.results));
-        message.success(`${body.results.length} more items loaded!`);
-      });
-  };
-
+function UserList({ type, data, onItemDbClick }: Props) {
   const handleOpenChat = useCallback(() => {
-    ipcRenderer.send('open-win', {
-      pathname: 'chat',
-      title: '聊天',
-      frame: false,
-      alive: true,
-      width: 580,
-      height: 520,
-    });
-  }, []);
-
-  useEffect(() => {
-    appendData();
-  }, []);
+    onItemDbClick?.();
+  }, [onItemDbClick]);
 
   return (
     <List size='small' split={false}>
       <VirtualList
         data={data}
-        height={ContainerHeight}
+        itemKey='id'
         itemHeight={47}
-        itemKey='email'>
-        {(item: UserItem) => (
-          <List.Item key={item.email} onDoubleClick={handleOpenChat}>
+        height={ContainerHeight}>
+        {item => (
+          <List.Item key={item.id} onDoubleClick={handleOpenChat}>
             <List.Item.Meta
-              avatar={<UAvatar icon={item.picture.large} size='large' />}
+              avatar={
+                <div className='list-avatar'>
+                  <UAvatar
+                    icon={item.icon}
+                    size={eq(type, 'group') ? 'small' : 'large'}
+                  />
+                  <sub className='list-gender'>
+                    {item.gender === 'w' ? (
+                      <WomanOutlined twoToneColor='#eb2f96' />
+                    ) : item.gender === 'm' ? (
+                      <ManOutlined twoToneColor='#1677ff' />
+                    ) : (
+                      ''
+                    )}
+                  </sub>
+                </div>
+              }
               title={
                 <>
-                  <sub className='info-time'>19:00</sub>
-                  <Badge count={5} size='small' offset={[-6, 18]}>
-                    {item.name.last}
-                  </Badge>
+                  {eq(type, 'message') ? (
+                    <>
+                      <sub className='list-info-time'>19:00</sub>
+                      <Badge count={5} size='small' offset={[-6, 18]}>
+                        {item.name}
+                      </Badge>
+                    </>
+                  ) : (
+                    item.name
+                  )}
                 </>
               }
-              description={item.email}
+              description={eq(type, 'message') ? item.desc : null}
             />
           </List.Item>
         )}

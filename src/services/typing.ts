@@ -35,3 +35,24 @@ export type VerificationCode = {
   code: string;
   endTime: number;
 };
+
+/**列表 */
+export type BaseList = {
+  id: number;
+  icon: string;
+  name: string;
+};
+
+/**好友列表 */
+export type FriendsList = {
+  gender: 'm' | 'w' | 'none';
+} & BaseList;
+
+/**用户消息列表 */
+export type UserMsgList = {
+  timestamp: number;
+  desc: string[];
+} & FriendsList;
+
+/**群组列表 */
+export type Groupist = BaseList;

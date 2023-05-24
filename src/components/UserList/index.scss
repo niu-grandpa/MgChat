@@ -28,9 +28,21 @@
   }
 }
 
-.info-time {
-  position: absolute;
-  top: 12px;
-  right: 10px;
-  font-weight: 400;
+.list {
+  &-info-time {
+    position: absolute;
+    top: 12px;
+    right: 10px;
+    font-weight: 400;
+  }
+
+  &-avatar {
+    position: relative;
+  }
+
+  &-gender {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+  }
 }
