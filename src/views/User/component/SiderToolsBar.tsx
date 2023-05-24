@@ -8,7 +8,6 @@ import {
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
 import { Badge, Button, Space } from 'antd';
-import { ipcRenderer } from 'electron';
 import { eq } from 'lodash-es';
 import { memo, useCallback, useState } from 'react';
 
@@ -28,19 +27,7 @@ function SiderToolsBar({ onChange }: { onChange: (tab: number) => void }) {
   return (
     <>
       <div>
-        <UAvatar
-          size='large'
-          onClick={() => {
-            ipcRenderer.send('open-win', {
-              pathname: 'chat',
-              title: '聊天',
-              frame: false,
-              alive: true,
-              width: 580,
-              height: 520,
-            });
-          }}
-        />
+        <UAvatar size='large' />
         <Badge status='success' className='user-siderbar-status' />
       </div>
       <Space wrap direction='vertical' className='user-siderbar-space'>

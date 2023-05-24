@@ -1,5 +1,6 @@
+import UserList from '@/components/UserList';
 import { SearchOutlined } from '@ant-design/icons';
-import Input from 'antd/es/input/Input';
+import { Input } from 'antd';
 import { memo } from 'react';
 
 function TabPanel({ index }: { index: number }) {
@@ -15,6 +16,7 @@ function TabPanel({ index }: { index: number }) {
           style={{ width: 160 }}
         />
       </div>
+      <UserList />
     </section>
   );
 }

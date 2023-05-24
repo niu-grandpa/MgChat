@@ -1,0 +1,36 @@
+.ant-list {
+  &-item {
+    position: relative;
+    transition: background 0.1s;
+    user-select: none;
+
+    &:hover {
+      border-color: transparent;
+      background-color: rgba($color: #c9cdd4, $alpha: 0.6);
+    }
+  }
+
+  &-item-meta {
+    &-avatar {
+      margin-inline-end: 8px !important;
+    }
+    &-title {
+      margin: 0 !important;
+      .ant-badge {
+        width: 100%;
+      }
+    }
+    &-description {
+      max-width: 161px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.info-time {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  font-weight: 400;
+}

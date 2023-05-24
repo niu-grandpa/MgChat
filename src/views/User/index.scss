@@ -10,15 +10,15 @@
 
     &-nav {
       background: #2e323b;
-      height: 36px;
     }
 
     .panel {
+      padding: 8px 0;
       -webkit-app-region: no-drag;
 
       &-search {
         position: absolute;
-        top: 7px;
+        top: 6px;
         left: 12px;
 
         .ant-input-affix-wrapper {
