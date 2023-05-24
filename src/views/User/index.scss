@@ -4,13 +4,27 @@
   height: 100vh;
 
   &-main {
-    border-right: 1px solid $color-border-3;
+    height: 100%;
+    border-right: 1px solid $color-border-1;
     background-color: $color-border-2 !important;
-    -webkit-app-region: no-drag;
 
     &-nav {
-      .anticon {
-        color: $color-text-1;
+      background: #2e323b;
+      height: 36px;
+    }
+
+    .panel {
+      -webkit-app-region: no-drag;
+
+      &-search {
+        position: absolute;
+        top: 7px;
+        left: 12px;
+
+        .ant-input-affix-wrapper {
+          -webkit-app-region: no-drag;
+          background-color: $background-2 !important;
+        }
       }
     }
   }
@@ -23,8 +37,8 @@
 
     &-status {
       position: absolute;
-      top: 48px;
-      right: 6px;
+      top: 20px;
+      right: 8px;
 
       &.ant-badge-status .ant-badge-status-dot {
         width: 8px;
@@ -33,13 +47,13 @@
     }
 
     &-space {
-      padding: 0 6px;
       margin-top: 28px;
       -webkit-app-region: no-drag;
 
       .logout {
         position: absolute;
         bottom: 8px;
+        left: 8px;
       }
     }
 
@@ -47,6 +61,20 @@
       color: $color-light;
       &:hover {
         color: $color-light;
+      }
+
+      &.active {
+        position: relative;
+        color: $color-success;
+        &::after {
+          position: absolute;
+          content: '';
+          width: 3px;
+          height: 40px;
+          right: -6px;
+          top: 0;
+          background-color: $color-success;
+        }
       }
     }
   }

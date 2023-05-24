@@ -4,11 +4,7 @@ import PwdFormInput from '@/components/PwdInput';
 import { useSleep as sleep, useCallbackPlus, useOnline } from '@/hooks';
 import { LoginData, LoginResponse } from '@/services/typing';
 import { getRegExp } from '@/utils';
-import {
-  DownOutlined,
-  Loading3QuartersOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { DownOutlined, LoadingOutlined, UserOutlined } from '@ant-design/icons';
 import {
   Alert,
   Button,
@@ -180,7 +176,7 @@ function LoginView() {
         {...{ spinning }}
         size='large'
         tip='登录中...'
-        indicator={<Loading3QuartersOutlined spin />}>
+        indicator={<LoadingOutlined spin />}>
         <Layout className='login'>
           <Header className='login-header'>
             <NavBar />

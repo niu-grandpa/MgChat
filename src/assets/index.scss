@@ -15,14 +15,15 @@ body {
   overflow: hidden;
 }
 
-button {
+button,
+a,
+.ant-avatar {
   user-select: none;
   -webkit-app-region: no-drag;
 }
 
 a {
   cursor: pointer;
-  -webkit-app-region: no-drag;
   &:hover {
     opacity: 0.8;
   }
