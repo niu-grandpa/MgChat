@@ -1,12 +1,12 @@
 import UAvatar from '@/components/Avatar';
 import NavBar from '@/components/NavBar';
+import NetAlert from '@/components/NetAlert';
 import PwdFormInput from '@/components/PwdInput';
 import { useSleep as sleep, useCallbackPlus, useOnline } from '@/hooks';
 import { LoginData, LoginResponse } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import { DownOutlined, LoadingOutlined, UserOutlined } from '@ant-design/icons';
 import {
-  Alert,
   Button,
   Checkbox,
   Col,
@@ -164,14 +164,7 @@ function LoginView() {
 
   return (
     <>
-      {!isOnline && (
-        <Alert
-          banner
-          closable
-          rootClassName='login-banner'
-          message='当前网络未连接，请检查网络后重试'
-        />
-      )}
+      <NetAlert rootClassName='login-banner' />
       <Spin
         {...{ spinning }}
         size='large'

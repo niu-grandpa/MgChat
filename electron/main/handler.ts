@@ -2,6 +2,7 @@ import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
   IpcMainInvokeEvent,
+  app,
   ipcMain,
   screen,
 } from 'electron';
@@ -52,7 +53,6 @@ export default function winHandler(config: {
     const childWindow = new BrowserWindow({
       ...rest,
       parent: win!,
-      alwaysOnTop: true,
       autoHideMenuBar: true,
       webPreferences: {
         preload,
@@ -78,15 +78,15 @@ export default function winHandler(config: {
     const { pathname, keepAlive, destroy, onClose } = args;
 
     if (pathname === 'main') {
-      config.win = null;
-      const allWindows = BrowserWindow.getAllWindows();
-      allWindows.forEach(child => child.close());
+      app.emit('window-all-closed');
+      return;
     }
     if (!map.has(pathname)) return;
     const currentWin = map.get(pathname)!;
 
     if (destroy) {
       currentWin.destroy();
+      map.delete(pathname);
     } else if (keepAlive) {
       currentWin.hide();
     } else {

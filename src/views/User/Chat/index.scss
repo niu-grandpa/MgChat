@@ -109,7 +109,7 @@
     &-left {
       .bubble-placement-left {
         margin-left: 12px;
-        margin-bottom: 10px;
+        margin-bottom: 16px;
 
         .bubble-arrow {
           left: 0;
@@ -132,7 +132,7 @@
 
       .bubble-placement-right {
         margin-right: 12px;
-        margin-bottom: 10px;
+        margin-bottom: 18px;
 
         .bubble-arrow {
           right: 0;
@@ -154,6 +154,7 @@
 
     &-tools {
       padding: 8px 0 8px 10px;
+
       .ant-col {
         color: $color-border-1;
         font-size: 18px;
@@ -161,6 +162,18 @@
         &:hover {
           color: $color-text-2;
         }
+
+        .ant-upload-wrapper {
+          line-height: inherit;
+          font-size: inherit;
+        }
+      }
+    }
+
+    &-input {
+      width: 510px;
+      &::-webkit-scrollbar {
+        display: none;
       }
     }
 

@@ -5,10 +5,30 @@ import { Input } from 'antd';
 import { ipcRenderer } from 'electron';
 import { memo, useCallback, useState } from 'react';
 
-function TabPanel({ index }: { index: number }) {
-  const [data, setData] = useState<UserMsgList[]>([]);
+const mock = [
+  {
+    uid: 0,
+    name: '谋生额',
+    gender: 'm',
+    icon: '',
+    timestamp: 1684997928239,
+    content: ['给你发了条新消息'],
+  },
+  {
+    uid: 1,
+    name: '谋生额',
+    gender: 'm',
+    icon: '',
+    timestamp: 1684997928239,
+    content: ['给你发了条新消息'],
+  },
+];
 
-  const handleOpenChat = useCallback(() => {
+function TabPanel({ index }: { index: number }) {
+  //@ts-ignore
+  const [data, setData] = useState<UserMsgList[]>(mock);
+
+  const handleOpenChat = useCallback((uid: number) => {
     ipcRenderer.send('open-win', {
       pathname: 'chat',
       title: '聊天',
@@ -16,6 +36,7 @@ function TabPanel({ index }: { index: number }) {
       alive: true,
       width: 580,
       height: 520,
+      search: `uid=${uid}`,
     });
   }, []);
 

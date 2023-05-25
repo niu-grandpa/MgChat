@@ -38,7 +38,7 @@ export type VerificationCode = {
 
 /**列表 */
 export type BaseList = {
-  id: number;
+  uid: number;
   icon: string;
   name: string;
 };
@@ -51,7 +51,7 @@ export type FriendsList = {
 /**用户消息列表 */
 export type UserMsgList = {
   timestamp: number;
-  desc: string[];
+  content: string[];
 } & FriendsList;
 
 /**群组列表 */

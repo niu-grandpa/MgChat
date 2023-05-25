@@ -1,4 +1,3 @@
-import { ManOutlined, WomanOutlined } from '@ant-design/icons';
 import { Badge, List } from 'antd';
 import { eq } from 'lodash';
 import VirtualList from 'rc-virtual-list';
@@ -9,15 +8,18 @@ import './index.scss';
 type Props = {
   type: 'message' | 'user' | 'group';
   data: any[];
-  onItemDbClick?: () => void;
+  onItemDbClick?: (uid: number) => void;
 };
 
 const ContainerHeight = 660 - 36;
 
 function UserList({ type, data, onItemDbClick }: Props) {
-  const handleOpenChat = useCallback(() => {
-    onItemDbClick?.();
-  }, [onItemDbClick]);
+  const handleOpenChat = useCallback(
+    (uid: number) => {
+      onItemDbClick?.(uid);
+    },
+    [onItemDbClick]
+  );
 
   return (
     <List size='small' split={false}>
@@ -27,7 +29,9 @@ function UserList({ type, data, onItemDbClick }: Props) {
         itemHeight={47}
         height={ContainerHeight}>
         {item => (
-          <List.Item key={item.id} onDoubleClick={handleOpenChat}>
+          <List.Item
+            key={item.uid}
+            onDoubleClick={() => handleOpenChat(item.uid)}>
             <List.Item.Meta
               avatar={
                 <div className='list-avatar'>
@@ -35,15 +39,6 @@ function UserList({ type, data, onItemDbClick }: Props) {
                     icon={item.icon}
                     size={eq(type, 'group') ? 'small' : 'large'}
                   />
-                  <sub className='list-gender'>
-                    {item.gender === 'w' ? (
-                      <WomanOutlined twoToneColor='#eb2f96' />
-                    ) : item.gender === 'm' ? (
-                      <ManOutlined twoToneColor='#1677ff' />
-                    ) : (
-                      ''
-                    )}
-                  </sub>
                 </div>
               }
               title={
@@ -51,7 +46,10 @@ function UserList({ type, data, onItemDbClick }: Props) {
                   {eq(type, 'message') ? (
                     <>
                       <sub className='list-info-time'>19:00</sub>
-                      <Badge count={5} size='small' offset={[-6, 18]}>
+                      <Badge
+                        count={item.content.length}
+                        size='small'
+                        offset={[-6, 26]}>
                         {item.name}
                       </Badge>
                     </>
@@ -60,7 +58,9 @@ function UserList({ type, data, onItemDbClick }: Props) {
                   )}
                 </>
               }
-              description={eq(type, 'message') ? item.desc : null}
+              description={
+                eq(type, 'message') ? <small>{item.content}</small> : null
+              }
             />
           </List.Item>
         )}
