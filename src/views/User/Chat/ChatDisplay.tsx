@@ -3,6 +3,15 @@ import NetAlert from '@/components/NetAlert';
 import { Divider, Layout } from 'antd';
 import { memo } from 'react';
 
+export type ChatMessageProps = {
+  message: {
+    role: 'me' | 'other';
+    content: string;
+    images: string[];
+    timestamp: number;
+  };
+};
+
 const Bubble = memo(
   ({ content, placement }: { content: string; placement: string }) => (
     <div className={`bubble bubble-placement-${placement}`}>
@@ -14,11 +23,13 @@ const Bubble = memo(
   )
 );
 
-function ChatDisplay() {
+function ChatDisplay({ message }: ChatMessageProps) {
   // [
   //  {role: 'me', content: '', images: [], timestamp: 0},
   //  {role: 'other', content: '', images: [], timestamp: 0},
   // ]
+  // 收集消息
+
   return (
     <>
       <NetAlert />

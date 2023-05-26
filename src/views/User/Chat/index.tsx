@@ -1,6 +1,7 @@
 import { useCallbackPlus } from '@/hooks';
 import { Layout } from 'antd';
-import ChatDisplay from './ChatDisplay';
+import { useState } from 'react';
+import ChatDisplay, { ChatMessageProps } from './ChatDisplay';
 import ChatHeader from './ChatHeader';
 import ChatInput, { SendEventProps } from './ChatInput';
 import './index.scss';
@@ -11,20 +12,29 @@ function ChatView() {
   // 3.接收目标消息。receive: { fromId: 1, content: '123', image: [] }
   // 4.接收成功后保存消息到云端。save: {uid: [{},...], ...}
   // 5.上一步需开通大贵族才能使用，否则保存在本地。
+  const [message, setMessage] = useState<ChatMessageProps['message']>({
+    role: 'me',
+    content: '',
+    images: [],
+    timestamp: 0,
+  });
 
-  const handleSendMsg = useCallbackPlus((data: SendEventProps) => {
-    console.log(data);
-  }, [])
-    .before((data: SendEventProps) => {
-      if (!('content' in data)) data.content = '';
-      if (!('images' in data)) data.images = [];
-    })
-    .after(() => {});
+  const receiveMessage = useCallbackPlus(() => {
+    // 实时接收对方消息
+  }, []);
+
+  const handleSendMsg = useCallbackPlus<SendEventProps>(
+    (data: SendEventProps) => {
+      // todo post请求 待到对方接收成功之后，此条消息再加入到聊天列表
+      return data;
+    },
+    []
+  ).after(data => setMessage(v => ({ ...v, ...data, role: 'me' })));
 
   return (
     <Layout className='chat'>
       <ChatHeader />
-      <ChatDisplay />
+      <ChatDisplay message={message} />
       <ChatInput onSend={handleSendMsg.invoke} />
     </Layout>
   );

@@ -13,8 +13,9 @@ import {
 import { KeyboardEvent, memo, useCallback, useState } from 'react';
 
 export type SendEventProps = {
-  content?: string;
-  images?: string[];
+  content: string;
+  images: string[];
+  timestamp: number;
 };
 
 const imgType = ['image/gif', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -41,14 +42,14 @@ function ChatInput({ onSend }: { onSend: (c: SendEventProps) => void }) {
   const handleSendImg = useCallback(
     (images: string[]) => {
       if (!images.length) return;
-      onSend?.({ images });
+      onSend?.({ content: '', images, timestamp: Date.now() });
     },
     [onSend]
   );
 
   const handleSendText = useCallback(() => {
     if (!isOnline || !value) return;
-    onSend?.({ content: value });
+    onSend?.({ content: value, images: [], timestamp: Date.now() });
     setValue('');
   }, [value, onSend]);
 
