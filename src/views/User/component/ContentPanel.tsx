@@ -30,13 +30,13 @@ function TabPanel({ index }: { index: number }) {
 
   const handleOpenChat = useCallback((uid: number) => {
     ipcRenderer.send('open-win', {
-      pathname: 'chat',
+      key: 'chat',
       title: '聊天',
       frame: false,
       alive: true,
       width: 580,
       height: 520,
-      search: `uid=${uid}`,
+      search: `?uid=${uid}`,
     });
   }, []);
 

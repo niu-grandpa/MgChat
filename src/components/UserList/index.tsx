@@ -25,7 +25,7 @@ function UserList({ type, data, onItemDbClick }: Props) {
     <List size='small' split={false}>
       <VirtualList
         data={data}
-        itemKey='id'
+        itemKey='uid'
         itemHeight={47}
         height={ContainerHeight}>
         {item => (

@@ -6,7 +6,7 @@ function Lazy(props: { comp: () => Promise<any> }) {
   return (
     <Suspense
       fallback={
-        <Spin delay={50} spinning size='large'>
+        <Spin delay={500} spinning size='large'>
           <section style={{ width: '100vw', height: '100vh' }} />
         </Spin>
       }>

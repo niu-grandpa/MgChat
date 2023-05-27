@@ -24,6 +24,40 @@
       color: $color-light;
       cursor: pointer;
     }
+
+    .menubar {
+      width: 100%;
+      display: flex;
+      justify-content: end;
+      position: absolute;
+      right: 0;
+      top: 0;
+
+      &-item {
+        width: 48px;
+        display: inline-block;
+        -webkit-app-region: no-drag;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background-color: $color-border-1;
+        }
+
+        &:last-child {
+          &:hover {
+            .anticon {
+              color: $color-light;
+            }
+            background-color: $color-danger-1;
+          }
+        }
+      }
+
+      .anticon {
+        color: $color-light;
+      }
+    }
   }
 
   &-display {
@@ -143,6 +177,10 @@
           }
         }
       }
+
+      .ant-avatar {
+        order: 1;
+      }
     }
   }
 
@@ -156,9 +194,10 @@
       padding: 8px 0 8px 10px;
 
       .ant-col {
-        color: $color-border-1;
         font-size: 18px;
         cursor: pointer;
+        color: $color-border-1;
+
         &:hover {
           color: $color-text-2;
         }
@@ -166,6 +205,7 @@
         .ant-upload-wrapper {
           line-height: inherit;
           font-size: inherit;
+          color: inherit;
         }
       }
     }

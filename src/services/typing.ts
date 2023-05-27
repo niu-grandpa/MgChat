@@ -1,3 +1,9 @@
+/**聊天角色 */
+export const enum MessageRoles {
+  'ME',
+  'OTHER',
+}
+
 /** 登录表单项数据 */
 export type LoginData = {
   account: string;
@@ -56,3 +62,11 @@ export type UserMsgList = {
 
 /**群组列表 */
 export type Groupist = BaseList;
+
+export type MessageData = {
+  role: MessageRoles;
+  icon?: string;
+  content: string;
+  images: string[];
+  timestamp: number;
+};

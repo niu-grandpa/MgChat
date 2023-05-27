@@ -138,7 +138,7 @@ function LoginView() {
   const handleForget = useCallback(() => {
     const account = form.getFieldValue('account');
     ipcRenderer.send('open-win', {
-      pathname: 'forget',
+      key: 'forget',
       title: '找回密码',
       search: !account ? '' : `?account=${account}`,
     });
@@ -230,7 +230,7 @@ function LoginView() {
                 className='login-register'
                 onClick={() => {
                   ipcRenderer.send('open-win', {
-                    pathname: 'register',
+                    key: 'register',
                     title: 'MgChat注册',
                   });
                 }}>

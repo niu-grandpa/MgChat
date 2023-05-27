@@ -1,16 +1,8 @@
 import Avatar from '@/components/Avatar';
 import NetAlert from '@/components/NetAlert';
+import { MessageData, MessageRoles } from '@/services/typing';
 import { Divider, Layout } from 'antd';
-import { memo } from 'react';
-
-export type ChatMessageProps = {
-  message: {
-    role: 'me' | 'other';
-    content: string;
-    images: string[];
-    timestamp: number;
-  };
-};
+import { memo, useEffect, useState } from 'react';
 
 const Bubble = memo(
   ({ content, placement }: { content: string; placement: string }) => (
@@ -23,12 +15,15 @@ const Bubble = memo(
   )
 );
 
-function ChatDisplay({ message }: ChatMessageProps) {
-  // [
-  //  {role: 'me', content: '', images: [], timestamp: 0},
-  //  {role: 'other', content: '', images: [], timestamp: 0},
-  // ]
+function ChatDisplay({ message }: { message?: MessageData }) {
   // 收集消息
+  const [msgList, setMsgList] = useState<MessageData[]>([]);
+
+  useEffect(() => {
+    if (message !== undefined) {
+      setMsgList(v => (v.push(message as MessageData), v.slice()));
+    }
+  }, [message]);
 
   return (
     <>
@@ -37,14 +32,15 @@ function ChatDisplay({ message }: ChatMessageProps) {
         <Divider plain dashed>
           2023/5/15 13:04:46
         </Divider>
-        <div className='chat-display-left'>
-          <Avatar />
-          <Bubble placement='left' content='顺便' />
-        </div>
-        <div className='chat-display-right'>
-          <Bubble placement='right' content='我擦，你听到没的说话码' />
-          <Avatar />
-        </div>
+        {msgList.map(item => {
+          const placement = item.role === MessageRoles.ME ? 'right' : 'left';
+          return (
+            <div className={`chat-display-${placement}`} key={item.timestamp}>
+              <Avatar icon={item.icon} />
+              <Bubble placement={placement} content={item.content} />
+            </div>
+          );
+        })}
       </Layout.Content>
     </>
   );

@@ -38,7 +38,7 @@ if (!app.requestSingleInstanceLock()) {
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null;
-// 存储所有创建的窗口，key为路由路径并且对应的value为它所创建的窗口
+// 缓存所有已创建过的窗口，key为pathname或pathname+search
 const winMap = new Map<string, BrowserWindow>();
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js');
@@ -65,11 +65,7 @@ async function createMainWindow() {
     },
   });
 
-  loadFile({
-    win,
-    pathname: '',
-    indexHtml,
-  });
+  loadFile({ win, key: '', indexHtml });
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
