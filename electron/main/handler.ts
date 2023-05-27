@@ -29,9 +29,10 @@ export default function winHandler(config: {
     // key无法单纯的只用pathname，这样的话无法得到那些同个路径下不同参数的窗口，
     // 假如当打开的url路径含参时，说明需要创建新窗口而实际上是在同个路径下渲染不同内容
     const _key = key + (search ?? '');
-    // 通过lru缓存激活假关闭的窗口
-    if (alive && LRU.get(_key)) {
-      LRU.get(_key)!.show();
+    // 使用lru缓存的目的是为了控制一定数量的假关闭窗口在后台活跃，避免占用过多的运行内存。
+    const caches = LRU.get(_key);
+    if (caches !== null) {
+      caches.show();
       return;
     }
 
@@ -46,6 +47,8 @@ export default function winHandler(config: {
       },
     });
 
+    // 缓存首次打开的窗口
+    if (alive) LRU.put(_key, childWindow);
     map.set(_key, childWindow);
 
     loadFile({ win: childWindow, key, indexHtml, search });
@@ -77,8 +80,7 @@ export default function winHandler(config: {
       map.delete(key);
     } else if (keepAlive) {
       tmp.hide();
-      // 更新lru缓存的窗口
-      LRU.put(key, tmp);
+      LRU.recycle();
     } else {
       onClose && tmp.on('close', onClose);
       tmp.close();
@@ -154,23 +156,30 @@ export function loadFile({
 }
 
 function createLRU() {
-  const map = new Map();
+  const caches = new Map<string, BrowserWindow>();
+
   return (capacity: number) => ({
     get(key: string): BrowserWindow | null {
-      if (map.has(key)) {
-        const tmp = map.get(key);
-        map.delete(key);
-        map.set(key, tmp);
+      if (caches.has(key)) {
+        const tmp = caches.get(key)!;
+        caches.delete(key);
+        caches.set(key, tmp);
         return tmp;
       }
       return null;
     },
+
     put(key: string, value: BrowserWindow) {
-      if (map.has(key)) map.delete(key);
-      map.set(key, value);
-      if (map.size > capacity) {
-        const old = map.keys().next().value;
-        map.delete(old);
+      if (caches.has(key)) caches.delete(key);
+      caches.set(key, value);
+    },
+
+    recycle() {
+      while (caches.size > capacity) {
+        const oldKey = caches.keys().next().value;
+        // 窗口由隐藏状态变为关闭
+        caches.get(oldKey)!.close();
+        caches.delete(oldKey);
       }
     },
   });

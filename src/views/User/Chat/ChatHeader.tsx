@@ -15,7 +15,10 @@ function ChatHeader() {
     const methods = {
       mini: () => ipcRenderer.send('min-win', { key }),
       max: () => ipcRenderer.send('max-win', { key }),
-      close: () => ipcRenderer.send('close-win', { key, keepAlive: true }),
+      close: () => {
+        console.log(key);
+        ipcRenderer.send('close-win', { key, keepAlive: true });
+      },
     };
     return methods[type]();
   }, []);

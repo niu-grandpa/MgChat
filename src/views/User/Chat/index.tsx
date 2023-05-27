@@ -21,12 +21,6 @@ function ChatView() {
 
   const onReceiveMessage = useCallbackPlus(() => {
     // 实时接收对方消息
-    setMessage({
-      role: 0,
-      content: 'string',
-      images: [],
-      timestamp: 0,
-    });
   }, []);
 
   const handleSendMsg = useCallbackPlus<SendEventProps>(
