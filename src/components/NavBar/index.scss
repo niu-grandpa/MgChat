@@ -9,11 +9,13 @@
   &-item {
     line-height: 32px;
     text-align: center;
+    z-index: 999;
     cursor: pointer;
     user-select: none;
     -webkit-app-region: no-drag;
 
-    .anticon {
+    .anticon,
+    a {
       color: $color-light;
     }
 

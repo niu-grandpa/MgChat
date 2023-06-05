@@ -18,6 +18,7 @@ type Props = {
   prefix?: ReactNode;
   addonBefore?: ReactNode;
   defaultVal: string;
+  onGetCode?: (data: any) => void;
   disabledWhenHasPhone?: boolean;
 };
 
@@ -25,6 +26,7 @@ const { phone } = getRegExp();
 
 function PhoneLoginInput({
   prefix,
+  onGetCode,
   addonBefore,
   defaultVal,
   disabledWhenHasPhone,
@@ -78,6 +80,7 @@ function PhoneLoginInput({
     })
     .after(({ phoneNumber, code, endTime }) => {
       setCode(phoneNumber, code, endTime);
+      onGetCode?.({});
     });
 
   return (
@@ -103,16 +106,18 @@ function PhoneLoginInput({
       <Space.Compact block>
         <Form.Item
           name='code'
-          style={{ width: '40%' }}
           rules={[{ required: true, message: '请填写验证码' }]}>
-          <Input type='number' placeholder='短信验证码' {...{ disabled }} />
+          <Input
+            type='number'
+            placeholder='短信验证码'
+            style={{ width: 207 }}
+          />
         </Form.Item>
         <Button
           ref={btnRef}
           disabled={isSend || disabled}
-          onClick={handleSend.invoke}
-          style={{ padding: '0 14px' }}>
-          发送验证码
+          onClick={handleSend.invoke}>
+          获取验证码
         </Button>
       </Space.Compact>
     </>

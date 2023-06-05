@@ -12,8 +12,8 @@ export type LoginData = {
   remember: boolean;
 };
 
-/**登录成功后返回的用户基本信息 */
-export type LoginResponse = {
+/**登录成功后返回的用户信息 */
+export type UserInfo = {
   icon: string;
   online: boolean;
   nickname: string;
