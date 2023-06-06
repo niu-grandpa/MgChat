@@ -1,3 +1,4 @@
+import Avatar from '@/components/Avatar';
 import PhoneLoginInput from '@/components/PhoneLoginInput';
 import { useCallbackPlus } from '@/hooks';
 import { Button, Form } from 'antd';
@@ -16,14 +17,17 @@ function MobileLogin() {
   );
 
   return (
-    <Form onFinish={handleSubmit.invoke}>
-      <PhoneLoginInput defaultVal='' />
-      <Form.Item>
-        <Button block type='primary' htmlType='submit'>
-          登录
-        </Button>
-      </Form.Item>
-    </Form>
+    <>
+      <Avatar size={58} className='login-avatar' />
+      <Form size='large' onFinish={handleSubmit.invoke}>
+        <PhoneLoginInput inputWidth={189} />
+        <Form.Item>
+          <Button block type='primary' htmlType='submit'>
+            登录
+          </Button>
+        </Form.Item>
+      </Form>
+    </>
   );
 }
 

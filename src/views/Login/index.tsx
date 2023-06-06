@@ -1,4 +1,3 @@
-import UAvatar from '@/components/Avatar';
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
 import { Layout, Tabs, TabsProps } from 'antd';
@@ -28,7 +27,6 @@ function LoginView() {
       <Layout className='login'>
         <Header className='login-header'>
           <NavBar />
-          <UAvatar icon={''} size={60} className='login-avatar' />
         </Header>
         <Content className='login-content'>
           <Tabs

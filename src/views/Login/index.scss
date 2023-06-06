@@ -14,7 +14,7 @@
 
   &-header {
     position: relative;
-    height: 92px;
+    height: 80px;
     padding: 0;
     background-color: $color-light;
     background-image: url('../../assets/icons/background.svg');
@@ -22,10 +22,10 @@
   }
 
   &-avatar {
-    position: absolute;
-    top: 50%;
+    position: fixed;
+    top: 4%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     border: 3px solid $color-primary-2;
     box-shadow: 0 0 20px rgb(75, 157, 226);
     -webkit-app-region: no-drag;
@@ -33,9 +33,6 @@
   }
 
   &-content {
-    position: relative;
-    top: -6px;
-    border-radius: 8px 8px 0;
     padding: 0 46px;
     user-select: none;
     border-radius: 6px;
@@ -43,13 +40,28 @@
     -webkit-app-region: no-drag;
   }
 
-  &-waiting {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background-color: rgba($color: $color-light, $alpha: 0.3);
+  &-waitting {
+    background-size: cover !important;
+    background-image: url('../../assets/icons/background.svg') !important;
+
+    &-content {
+      height: 80%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-size: 16px;
+      color: $color-light;
+      p {
+        margin-top: 18px;
+      }
+      .ant-btn {
+        margin-top: 20px;
+        border-color: $color-primary-3;
+        color: $color-primary-3;
+        background-color: transparent;
+      }
+    }
   }
 }
 
@@ -59,4 +71,9 @@
       margin-bottom: 14px;
     }
   }
+}
+
+.ant-tabs-tabpane {
+  width: 296px;
+  margin-left: 12px;
 }

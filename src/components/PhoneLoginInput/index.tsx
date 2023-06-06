@@ -15,11 +15,12 @@ import {
 } from 'react';
 
 type Props = {
-  prefix?: ReactNode;
-  addonBefore?: ReactNode;
+  prefix: ReactNode;
+  addonBefore: ReactNode;
   defaultVal: string;
-  onGetCode?: (data: any) => void;
-  disabledWhenHasPhone?: boolean;
+  inputWidth: number;
+  onGetCode: (data: any) => void;
+  disabledWhenHasPhone: boolean;
 };
 
 const { phone } = getRegExp();
@@ -29,12 +30,13 @@ function PhoneLoginInput({
   onGetCode,
   addonBefore,
   defaultVal,
+  inputWidth,
   disabledWhenHasPhone,
-}: Props) {
+}: Partial<Props>) {
   const { set: setCode, createMap } = useCheckVerificationCode();
 
   const [isSend, setIsSend] = useState(false);
-  const [pnumber, setpNumber] = useState(defaultVal);
+  const [pnumber, setpNumber] = useState(defaultVal || '');
 
   const countdown = useRef(59);
   const btnRef = useRef<HTMLElement>(null);
@@ -110,7 +112,7 @@ function PhoneLoginInput({
           <Input
             type='number'
             placeholder='短信验证码'
-            style={{ width: 207 }}
+            style={{ width: inputWidth }}
           />
         </Form.Item>
         <Button
