@@ -52,9 +52,11 @@
       flex-direction: column;
       font-size: 16px;
       color: $color-light;
+
       p {
         margin-top: 18px;
       }
+
       .ant-btn {
         margin-top: 20px;
         border-color: $color-primary-3;
@@ -62,6 +64,11 @@
         background-color: transparent;
       }
     }
+  }
+
+  .ant-tabs-tabpane {
+    width: 296px;
+    margin-left: 12px;
   }
 }
 
@@ -73,7 +80,54 @@
   }
 }
 
-.ant-tabs-tabpane {
-  width: 296px;
-  margin-left: 12px;
+.mb-register {
+  &-drawer {
+    .ant-drawer-header {
+      padding: 8px;
+      border-bottom: 0;
+
+      .close-icon {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        -webkit-app-region: no-drag;
+      }
+    }
+  }
+
+  &-content {
+    text-align: center;
+    .ant-typography {
+      color: $color-gray-1;
+    }
+  }
+
+  &-gender {
+    margin-top: 52px;
+  }
+
+  &-nickname {
+    width: 260px;
+    margin-top: 52px;
+    border-bottom: 1px solid $color-border-1;
+    &:focus,
+    &:hover {
+      border-bottom: 1px solid $color-border-1;
+    }
+  }
+
+  &-pwd {
+    width: 260px;
+    margin-top: 46px;
+    margin-left: 52px;
+  }
+
+  &-optbtn {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    position: absolute;
+    bottom: -64px;
+    left: 0;
+  }
 }
