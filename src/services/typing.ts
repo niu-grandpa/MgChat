@@ -1,72 +1,41 @@
-/**聊天角色 */
-export const enum MessageRoles {
-  'ME',
-  'OTHER',
+import { UserStatus } from './enum';
+
+export type ResponseData<T> = Promise<{
+  code: number;
+  msg: string;
+  data: T;
+}>;
+
+export interface UserInfo {
+  icon: string;
+  city: string;
+  age: number;
+  token: string;
+  status: UserStatus;
+  level: number;
+  gender: number;
+  credit: number;
+  privilege: number;
+  upgradeDays: number;
+  nickname: string;
+  uid: string;
+  password: string;
+  phoneNumber: string;
+  friends: UserInfo[];
+  groups: GroupInfo[];
+  timeInfo: {
+    loginTime: number;
+    logoutTime: number;
+    activeTime: number;
+    createTime: number;
+    expiredTime: number;
+  };
 }
 
-/** 登录表单项数据 */
-export type LoginData = {
-  account: string;
-  password: string;
-  auto: boolean;
-  remember: boolean;
-};
-
-/**登录成功后返回的用户信息 */
-export type UserInfo = {
-  icon: string;
-  online: boolean;
-  nickname: string;
-};
-
-/**注册表单项数据 */
-export type ResisterData = {
-  account?: string;
-  nickname: string;
-  password: string;
-  phoneNumber: string;
-  code: number;
-};
-
-/**修改密码表单项数据 */
-export type ChangePassword = {
-  phoneNumber: string;
-  password: string;
-  code: string;
-};
-
-/**获取验证码 */
-export type VerificationCode = {
-  phoneNumber: string;
-  code: string;
-  endTime: number;
-};
-
-/**列表 */
-export type BaseList = {
-  uid: number;
-  icon: string;
+export interface GroupInfo {
+  gid: number;
   name: string;
-};
-
-/**好友列表 */
-export type FriendsList = {
-  gender: 'm' | 'w' | 'none';
-} & BaseList;
-
-/**用户消息列表 */
-export type UserMsgList = {
-  timestamp: number;
-  content: string[];
-} & FriendsList;
-
-/**群组列表 */
-export type Groupist = BaseList;
-
-export type MessageData = {
-  role: MessageRoles;
-  icon?: string;
-  content: string;
-  images: string[];
-  timestamp: number;
-};
+  owner: UserInfo;
+  member: UserInfo[];
+  createTime: number;
+}

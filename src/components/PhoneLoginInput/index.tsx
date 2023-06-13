@@ -2,7 +2,7 @@ import { useCallbackPlus, useCheckVerificationCode } from '@/hooks';
 import { VerificationCode } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import { PhoneOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Space, message } from 'antd';
+import { Button, Form, Input, message } from 'antd';
 import { eq } from 'lodash-es';
 import {
   ReactNode,
@@ -63,7 +63,7 @@ function PhoneLoginInput({
       btnRef.current && (btnRef.current.innerText = '发送验证码');
       return;
     }
-    btnRef.current!.innerText = `已发送 ${countdown.current--}s`;
+    btnRef.current!.innerText = `重新获取 ${countdown.current--}s`;
   }, [timer, countdown, btnRef]);
 
   const handleSend = useCallbackPlus<VerificationCode>(() => {
@@ -105,23 +105,24 @@ function PhoneLoginInput({
           disabled={disabledWhenHasPhone && !eq(defaultVal, '')}
         />
       </Form.Item>
-      <Space.Compact block>
-        <Form.Item
-          name='code'
-          rules={[{ required: true, message: '请填写验证码' }]}>
-          <Input
-            type='number'
-            placeholder='短信验证码'
-            style={{ width: inputWidth }}
-          />
-        </Form.Item>
-        <Button
-          ref={btnRef}
-          disabled={isSend || disabled}
-          onClick={handleSend.invoke}>
-          获取验证码
-        </Button>
-      </Space.Compact>
+      <Form.Item
+        name='code'
+        rules={[{ required: true, message: '请填写验证码' }]}>
+        <Input
+          type='number'
+          placeholder='短信验证码'
+          suffix={
+            <Button
+              ref={btnRef}
+              type='link'
+              size='small'
+              disabled={isSend || disabled}
+              onClick={handleSend.invoke}>
+              获取验证码
+            </Button>
+          }
+        />
+      </Form.Item>
     </>
   );
 }

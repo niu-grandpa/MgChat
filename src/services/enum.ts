@@ -1,0 +1,24 @@
+export const enum UserStatus {
+  ONLINE = 0,
+  OFFLINE = 1,
+  ACTIVE = 2,
+  BUSY = 3,
+  INVISIBILITY = 4,
+  DO_NOT_DISTURB = 5,
+}
+
+export const enum UserGender {
+  MAN = 0,
+  WOMAN = 1,
+  NONE = 3,
+}
+
+/**
+ * 聊天的角色方
+ */
+export const enum MessageRole {
+  /**我 */
+  ME = 0,
+  /**对方 */
+  OTHER = 1,
+}

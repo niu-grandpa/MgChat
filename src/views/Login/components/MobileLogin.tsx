@@ -3,7 +3,9 @@ import manIcon from '@/assets/icons/man.svg';
 import Avatar from '@/components/Avatar';
 import PhoneLoginInput from '@/components/PhoneLoginInput';
 import PwdInput from '@/components/PwdInput';
-import { useCallbackPlus } from '@/hooks';
+import { useCallbackPlus, useLocalUsers } from '@/hooks';
+import { userApi } from '@/services';
+import { UserInfo } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import {
   ArrowLeftOutlined,
@@ -29,7 +31,7 @@ import { eq } from 'lodash-es';
 import { useCallback, useRef, useState } from 'react';
 import Waitting from './Waitting';
 
-type LoginWithPwd = {
+type LoginWithPhone = {
   phoneNumber: string;
   code: string;
 };
@@ -39,50 +41,77 @@ const { useForm } = Form;
 const { pwd } = getRegExp();
 
 function MobileLogin() {
-  const [loginForm] = useForm<LoginWithPwd>();
+  const [loginForm] = useForm<LoginWithPhone>();
   const [registerForm] = useForm<{ password: string; double: string }>();
+  const localUser = useLocalUsers();
 
   const carousel = useRef<CarouselRef>(null);
+  const token = useRef(localStorage.getItem('token') || '');
 
   const [code, setCode] = useState<string>('');
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
   const [current, setCurrent] = useState(0);
   const [gender, setGender] = useState(-1);
   const [nickname, setNickname] = useState('');
 
-  const handleLoginWithToken = useCallback((token: string) => {
-    // todo
+  const restData = useCallback(() => {
+    setCurrent(0);
+    setGender(-1);
+    setNickname('');
+    setOpen(false);
+    setLoading(false);
+    setIsLogin(false);
+    registerForm.setFieldsValue({ password: undefined, double: undefined });
   }, []);
 
-  const handleLogin = useCallbackPlus((values: LoginWithPwd) => {
+  const handleSaveUser = useCallback(
+    ({ uid, icon, nickname, password }: UserInfo) => {
+      localUser.set({
+        uid,
+        icon,
+        nickname,
+        password,
+        auto: true,
+        remember: true,
+      });
+    },
+    [localUser]
+  );
+
+  const handleLogin = useCallbackPlus((values: LoginWithPhone) => {
     // todo
   }, [])
-    .before(values => {
+    .before(async ({ phoneNumber }: LoginWithPhone) => {
+      const { data } = await userApi.getUser({ phoneNumber });
       // 未查询到用户信息则要么注册要么不登录
-      Modal.confirm({
-        width: 280,
-        content: '该手机号尚未注册账号，是否进行注册?',
-        okText: 'Go',
-        cancelText: '取消',
-        onOk() {
-          setOpen(true);
-        },
-      });
+      if (data === null) {
+        // 转入注册流程并且使用登录token
+        Modal.confirm({
+          width: 300,
+          content: '是否使用该手机号码注册新用户?',
+          onOk: () => setOpen(true),
+          okText: '确定',
+          cancelText: '取消',
+          mask: false,
+        });
+        return false;
+      }
     })
     .after(() => {
       // token 存入本地
     });
 
-  const handleRegNext = useCallbackPlus(() => {
-    if (current < 2) {
-      carousel.current?.next();
-      return;
-    }
+  const handleCreateUser = useCallbackPlus<{ data: UserInfo }>(async () => {
     setLoading(true);
-    // 注册成功返回token
-  }, [gender, current, nickname, registerForm])
+    return await userApi.registerByPhone({
+      nickname,
+      gender,
+      ...loginForm.getFieldsValue(),
+      password: registerForm.getFieldValue('password'),
+    });
+  }, [gender, current, nickname, registerForm, loginForm])
     .before(() => {
       if (eq(gender, -1)) {
         message.error('至少选择一个性别');
@@ -100,55 +129,61 @@ function MobileLogin() {
         message.error('请正确填写您的密码');
         return false;
       }
+      if (current < 2) {
+        carousel.current?.next();
+        return false;
+      }
     })
-    .after(() => {
+    .after(({ data }) => {
       restData();
-      setIsLogin(true);
-      handleLoginWithToken('');
+      handleLoginWithToken(data.token);
     });
 
-  const restData = useCallback(() => {
-    setOpen(false);
-    setLoading(false);
-    setCurrent(0);
-    setGender(-1);
-    setNickname('');
-    loginForm.setFieldsValue({ phoneNumber: undefined, code: undefined });
-    registerForm.setFieldsValue({ password: undefined, double: undefined });
-  }, []);
+  const handleLoginWithToken = useCallback(
+    (newToken: string) => {
+      if (newToken) token.current = newToken;
+      setIsLogin(true);
+      userApi
+        .loginWithToken(token.current)
+        .then(({ data }) => handleSaveUser(data))
+        .catch(err => message.warning(err.data.msg));
+      restData();
+    },
+    [handleSaveUser, token, restData]
+  );
 
   return (
     <>
       <Avatar size={58} className='login-avatar' />
-
-      <Form form={loginForm} size='large' onFinish={handleLogin.invoke}>
-        <PhoneLoginInput inputWidth={189} />
+      {/* 登录框 */}
+      <Form form={loginForm} onFinish={handleLogin.invoke}>
+        <PhoneLoginInput />
         <Form.Item>
-          <Button size='middle' block type='primary' htmlType='submit'>
+          <Button
+            block
+            type='primary'
+            htmlType='submit'
+            style={{ marginTop: 14 }}>
             登录
           </Button>
         </Form.Item>
       </Form>
-
+      {/* 登录等待 */}
       <Waitting open={isLogin} />
-
+      {/* 注册 */}
       <Drawer
         {...{ open }}
         width='100%'
         destroyOnClose
         className='mb-register-drawer'
-        onClose={() => setOpen(false)}
+        onClose={restData}
         closeIcon={<LeftOutlined className='close-icon' />}>
         <Spin
           spinning={loading}
-          tip='注册中...'
+          tip='等待注册回应...'
           indicator={<LoadingOutlined />}
           size='large'>
-          <Carousel
-            ref={carousel}
-            dots={false}
-            afterChange={setCurrent}
-            effect='fade'>
+          <Carousel ref={carousel} dots={false} afterChange={setCurrent}>
             <div className='mb-register-content'>
               <Title level={4}>选择您的性别</Title>
 
@@ -211,7 +246,7 @@ function MobileLogin() {
               shape='circle'
               size='large'
               icon={<ArrowRightOutlined />}
-              onClick={handleRegNext.invoke}
+              onClick={handleCreateUser.invoke}
             />
           </div>
         </Spin>

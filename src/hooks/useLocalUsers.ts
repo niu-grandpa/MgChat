@@ -1,5 +1,5 @@
 import { uniqBy } from 'lodash';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 export type LocalUsersType = {
   uid: string;
@@ -14,27 +14,32 @@ export type LocalUsersType = {
  * 从本地缓存中存取登录过的历史用户列表
  */
 export function useLocalUsers() {
-  const localData = useMemo<LocalUsersType[]>(() => {
-    const data = localStorage.getItem('users');
-    return data ? JSON.parse(data) : [];
-  }, []);
-
-  const list = useMemo(() => localData, [localData]);
+  const localData = useRef<LocalUsersType[]>(
+    JSON.parse(localStorage.getItem('users') || '[]')
+  );
 
   const get = useCallback(
-    (uid: string) => localData.filter(item => item.uid === uid)[0],
+    (uid: string) => localData.current.filter(item => item.uid === uid)[0],
     [localData]
   );
 
-  const set = useCallback((data: LocalUsersType) => {
-    localData.push(data);
-    localStorage.setItem('users', JSON.stringify(uniqBy(localData, 'uid')));
-  }, []);
+  const set = useCallback(
+    (data: LocalUsersType) => {
+      localData.current.push(data);
+      localStorage.setItem(
+        'users',
+        JSON.stringify(uniqBy(localData.current, 'uid'))
+      );
+    },
+    [localData]
+  );
 
   const clear = useCallback(() => {
-    localData.length = 0;
+    localData.current.length = 0;
     localStorage.removeItem('users');
-  }, []);
+  }, [localData]);
+
+  const list = useCallback(() => localData.current, [localData]);
 
   return useMemo(
     () => ({

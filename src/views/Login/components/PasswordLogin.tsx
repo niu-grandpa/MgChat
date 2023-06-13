@@ -2,7 +2,6 @@ import Avatar from '@/components/Avatar';
 import PwdFormInput from '@/components/PwdInput';
 import { useCallbackPlus, useLocalUsers } from '@/hooks';
 import { type LocalUsersType } from '@/hooks/useLocalUsers';
-import { LoginData } from '@/services/typing';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
 import {
   Button,
@@ -40,14 +39,18 @@ function PasswordLogin() {
   const [avatar, setAvatar] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const uid = useWatch('uid', form as FormInstance);
+  const uid: string = useWatch('uid', form as FormInstance);
+
   useEffect(() => {
     if (eq(uid, undefined)) return;
     if (!uid.length) {
       form.setFieldsValue({ password: '', auto: false, remember: false });
     }
-    setAvatar(localUsers.get(uid).icon);
-  }, [uid]);
+    if (uid.length === 10) {
+      const user = localUsers.get(uid);
+      user && setAvatar(user.icon);
+    }
+  }, [uid, form]);
 
   const handleSetUser = useCallback(
     (uid: string) => {
@@ -59,7 +62,7 @@ function PasswordLogin() {
     [form]
   );
 
-  const handleLogin = useCallbackPlus(async (values: LoginData) => {
+  const handleLogin = useCallbackPlus(async (values: LoginWithPwd) => {
     // todo 去掉不必要字段、jwt加密
     return values;
   }, [])
@@ -95,8 +98,9 @@ function PasswordLogin() {
     });
   }, []);
 
-  const userItems: MenuProps['items'] = localUsers.list.map(
-    ({ nickname, uid, icon }) => ({
+  const userItems: MenuProps['items'] = localUsers
+    .list()
+    .map(({ nickname, uid, icon }) => ({
       key: uid,
       label: (
         <Row align='middle' key={uid}>
@@ -110,8 +114,7 @@ function PasswordLogin() {
         </Row>
       ),
       onClick: () => handleSetUser(uid),
-    })
-  );
+    }));
 
   return (
     <>
