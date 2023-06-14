@@ -3,8 +3,8 @@ import manIcon from '@/assets/icons/man.svg';
 import Avatar from '@/components/Avatar';
 import PhoneLoginInput from '@/components/PhoneLoginInput';
 import PwdInput from '@/components/PwdInput';
-import { useCallbackPlus, useLocalUsers } from '@/hooks';
-import { userApi } from '@/services';
+import { useCallbackPlus } from '@/hooks';
+import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import {
@@ -28,7 +28,7 @@ import {
 } from 'antd';
 import { CarouselRef } from 'antd/es/carousel';
 import { eq } from 'lodash-es';
-import { useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import Waitting from './Waitting';
 
 type LoginWithPhone = {
@@ -40,10 +40,9 @@ const { Title } = Typography;
 const { useForm } = Form;
 const { pwd } = getRegExp();
 
-function MobileLogin() {
+function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
   const [loginForm] = useForm<LoginWithPhone>();
   const [registerForm] = useForm<{ password: string; double: string }>();
-  const localUser = useLocalUsers();
 
   const carousel = useRef<CarouselRef>(null);
   const token = useRef(localStorage.getItem('token') || '');
@@ -52,6 +51,7 @@ function MobileLogin() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
+  const [btnLoading, setBtnLoading] = useState(false);
   const [current, setCurrent] = useState(0);
   const [gender, setGender] = useState(-1);
   const [nickname, setNickname] = useState('');
@@ -63,31 +63,22 @@ function MobileLogin() {
     setOpen(false);
     setLoading(false);
     setIsLogin(false);
+    setBtnLoading(false);
     registerForm.setFieldsValue({ password: undefined, double: undefined });
   }, []);
 
-  const handleSaveUser = useCallback(
-    ({ uid, icon, nickname, password }: UserInfo) => {
-      localUser.set({
-        uid,
-        icon,
-        nickname,
-        password,
-        auto: true,
-        remember: true,
-      });
+  const handleLogin = useCallbackPlus<{ data: UserInfo }>(
+    (values: LoginWithPhone) => {
+      return apiHandler(() => userApi.loginWithMobile(values));
     },
-    [localUser]
-  );
-
-  const handleLogin = useCallbackPlus((values: LoginWithPhone) => {
-    // todo
-  }, [])
-    .before(async ({ phoneNumber }: LoginWithPhone) => {
-      const { data } = await userApi.getUser({ phoneNumber });
-      // 未查询到用户信息则要么注册要么不登录
-      if (data === null) {
-        // 转入注册流程并且使用登录token
+    []
+  )
+    .before(async ({ phoneNumber, code }: LoginWithPhone) => {
+      setBtnLoading(true);
+      // 如果未查询到用户信息则要么注册要么不登录
+      const data = await apiHandler(() => userApi.getUser({ phoneNumber }));
+      if (!data) {
+        // 转入注册流程，如果注册成功使用token登录
         Modal.confirm({
           width: 300,
           content: '是否使用该手机号码注册新用户?',
@@ -96,21 +87,24 @@ function MobileLogin() {
           cancelText: '取消',
           mask: false,
         });
-        return false;
+        return data;
       }
     })
-    .after(() => {
-      // token 存入本地
+    .after(({ data }) => {
+      restData();
+      onSuccess(data);
     });
 
   const handleCreateUser = useCallbackPlus<{ data: UserInfo }>(async () => {
     setLoading(true);
-    return await userApi.registerByPhone({
-      nickname,
-      gender,
-      ...loginForm.getFieldsValue(),
-      password: registerForm.getFieldValue('password'),
-    });
+    return await apiHandler(() =>
+      userApi.registerByPhone({
+        nickname,
+        gender,
+        ...loginForm.getFieldsValue(),
+        password: registerForm.getFieldValue('password'),
+      })
+    );
   }, [gender, current, nickname, registerForm, loginForm])
     .before(() => {
       if (eq(gender, -1)) {
@@ -135,21 +129,20 @@ function MobileLogin() {
       }
     })
     .after(({ data }) => {
-      restData();
-      handleLoginWithToken(data.token);
+      handleLoginWithToken(data.token).then(() => onSuccess(data));
     });
 
   const handleLoginWithToken = useCallback(
-    (newToken: string) => {
+    async (newToken: string) => {
       if (newToken) token.current = newToken;
       setIsLogin(true);
-      userApi
-        .loginWithToken(token.current)
-        .then(({ data }) => handleSaveUser(data))
-        .catch(err => message.warning(err.data.msg));
+      const data = await apiHandler(() =>
+        userApi.loginWithToken(token.current)
+      );
+      if (!data) return;
       restData();
     },
-    [handleSaveUser, token, restData]
+    [token, restData]
   );
 
   return (
@@ -163,6 +156,7 @@ function MobileLogin() {
             block
             type='primary'
             htmlType='submit'
+            loading={btnLoading}
             style={{ marginTop: 14 }}>
             登录
           </Button>
@@ -255,4 +249,4 @@ function MobileLogin() {
   );
 }
 
-export default MobileLogin;
+export default memo(MobileLogin);

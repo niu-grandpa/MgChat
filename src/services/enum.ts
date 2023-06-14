@@ -1,11 +1,13 @@
 export const enum UserStatus {
-  ONLINE = 0,
-  OFFLINE = 1,
+  OFFLINE = 0,
+  ONLINE = 1,
   ACTIVE = 2,
   BUSY = 3,
   INVISIBILITY = 4,
   DO_NOT_DISTURB = 5,
 }
+
+export const enum UserPrivilege {}
 
 export const enum UserGender {
   MAN = 0,

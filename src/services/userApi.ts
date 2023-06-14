@@ -45,3 +45,16 @@ export const loginWithToken = async (token: string): ResponseData<UserInfo> => {
   });
   return data;
 };
+
+/**
+ * 手机号码登录
+ */
+export const loginWithMobile = async (params: {
+  phoneNumber: string;
+  code: string;
+}): ResponseData<UserInfo> => {
+  const { data } = await axios.post(`${URL}/login-with-phone`, {
+    data: params,
+  });
+  return data;
+};

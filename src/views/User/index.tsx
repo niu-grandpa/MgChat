@@ -10,7 +10,7 @@ import './index.scss';
 const { Sider } = Layout;
 
 function UserPanel() {
-  const { state } = useLocation() as { state: { account: string } };
+  const { state } = useLocation() as { state: { login: boolean } };
 
   const [tab, setTab] = useState(0);
 
@@ -29,7 +29,11 @@ function UserPanel() {
   }, []);
 
   useEffect(() => {
-    changeWinShape();
+    if (state.login) {
+      const userData = JSON.parse(sessionStorage.getItem('temporary') || '{}');
+      changeWinShape();
+      console.log(userData);
+    }
   }, [state]);
 
   return (

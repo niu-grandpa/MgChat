@@ -1,6 +1,10 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
+import { useLocalUsers } from '@/hooks';
+import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MobileLogin from './components/MobileLogin';
 import PasswordLogin from './components/PasswordLogin';
 import './index.scss';
@@ -8,6 +12,35 @@ import './index.scss';
 const { Header, Content } = Layout;
 
 function LoginView() {
+  const localUser = useLocalUsers();
+  const navTo = useNavigate();
+
+  const handleSaveData = useCallback(
+    (data: UserInfo) => {
+      const { uid, token, icon, nickname, password } = data;
+      localStorage.setItem('token', token);
+      // 用户数据通过sessionStorage临时存储起来，方便页面间传递
+      sessionStorage.setItem('temporary', JSON.stringify(data));
+      localUser.set({
+        uid,
+        icon,
+        nickname,
+        password,
+        auto: true,
+        remember: true,
+      });
+    },
+    [localUser]
+  );
+
+  const handleLoginSuccess = useCallback(
+    (data: UserInfo) => {
+      handleSaveData(data);
+      navTo('/user', { state: { login: true } });
+    },
+    [handleSaveData]
+  );
+
   const tabItems: TabsProps['items'] = [
     {
       key: 'password',
@@ -17,7 +50,7 @@ function LoginView() {
     {
       key: 'mobile',
       label: `手机号登录`,
-      children: <MobileLogin />,
+      children: <MobileLogin onSuccess={handleLoginSuccess} />,
     },
   ];
 
