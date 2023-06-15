@@ -27,7 +27,7 @@ function SiderToolsBar({ onChange }: { onChange: (tab: number) => void }) {
   return (
     <>
       <div>
-        <Avatar size='large' />
+        <Avatar shape='square' />
         <Badge status='success' className='user-siderbar-status' />
       </div>
       <Space wrap direction='vertical' className='user-siderbar-space'>

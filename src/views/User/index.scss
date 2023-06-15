@@ -8,7 +8,7 @@
     background-color: $color-border-2 !important;
 
     &-nav {
-      background: #2e323b;
+      background: $background-3;
       .navbar {
         height: 28px;
         &-item {
@@ -18,7 +18,9 @@
     }
 
     .panel {
+      height: 100vh;
       padding: 8px 0;
+      background-color: $background-5;
       -webkit-app-region: no-drag;
 
       &-search {
@@ -37,13 +39,13 @@
   &-siderbar {
     text-align: center;
     padding: 24px 0;
-    background: $background-3 !important;
+    background: $background-4 !important;
     color: $color-light;
 
     &-status {
       position: absolute;
-      top: 53px;
-      right: 8px;
+      top: 46px;
+      right: 6px;
 
       &.ant-badge-status .ant-badge-status-dot {
         width: 8px;

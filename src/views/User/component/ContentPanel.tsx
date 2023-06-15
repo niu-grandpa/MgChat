@@ -1,32 +1,11 @@
 import UserList from '@/components/UserList';
-import { UserMsgList } from '@/services/typing';
 import { ipcRenderer } from 'electron';
 import { memo, useCallback, useState } from 'react';
 
-const mock = [
-  {
-    uid: 0,
-    name: '谋生额',
-    gender: 'm',
-    icon: '',
-    timestamp: 1684997928239,
-    content: ['给你发了条新消息'],
-  },
-  {
-    uid: 1,
-    name: '谋生额',
-    gender: 'm',
-    icon: '',
-    timestamp: 1684997928239,
-    content: ['给你发了条新消息'],
-  },
-];
-
 function TabPanel({ index }: { index: number }) {
-  //@ts-ignore
-  const [data, setData] = useState<UserMsgList[]>(mock);
+  const [list, setList] = useState<[]>([]);
 
-  const handleOpenChat = useCallback((uid: number) => {
+  const handleItemClick = useCallback((uid: number) => {
     ipcRenderer.send('open-win', {
       key: 'chat',
       title: '聊天',
@@ -50,7 +29,7 @@ function TabPanel({ index }: { index: number }) {
           style={{ width: 160 }}
         />
       </div> */}
-      <UserList type='message' data={data} onItemDbClick={handleOpenChat} />
+      <UserList type='message' data={list} onItemDbClick={handleItemClick} />
     </section>
   );
 }

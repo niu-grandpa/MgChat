@@ -1,8 +1,9 @@
-import { Badge, List } from 'antd';
+import { mainWinSize } from '@/views/User';
+import { Badge, Empty, List } from 'antd';
 import { eq } from 'lodash';
 import VirtualList from 'rc-virtual-list';
 import { memo, useCallback } from 'react';
-import UAvatar from '../Avatar';
+import Avatar from '../Avatar';
 import './index.scss';
 
 type Props = {
@@ -11,60 +12,62 @@ type Props = {
   onItemDbClick?: (uid: number) => void;
 };
 
-const ContainerHeight = 660 - 36;
+const height = mainWinSize.height - 36;
 
 function UserList({ type, data, onItemDbClick }: Props) {
   const handleOpenChat = useCallback(
-    (uid: number) => {
-      onItemDbClick?.(uid);
-    },
+    (uid: number) => onItemDbClick?.(uid),
     [onItemDbClick]
   );
 
   return (
     <List size='small' split={false}>
-      <VirtualList
-        data={data}
-        itemKey='uid'
-        itemHeight={47}
-        height={ContainerHeight}>
-        {item => (
-          <List.Item
-            key={item.uid}
-            onDoubleClick={() => handleOpenChat(item.uid)}>
-            <List.Item.Meta
-              avatar={
-                <div className='list-avatar'>
-                  <UAvatar
-                    icon={item.icon}
-                    size={eq(type, 'group') ? 'small' : 'large'}
-                  />
-                </div>
-              }
-              title={
-                <>
-                  {eq(type, 'message') ? (
-                    <>
-                      <sub className='list-info-time'>19:00</sub>
-                      <Badge
-                        count={item.content.length}
-                        size='small'
-                        offset={[-6, 26]}>
-                        {item.name}
-                      </Badge>
-                    </>
-                  ) : (
-                    item.name
-                  )}
-                </>
-              }
-              description={
-                eq(type, 'message') ? <small>{item.content}</small> : null
-              }
-            />
-          </List.Item>
-        )}
-      </VirtualList>
+      {!data.length ? (
+        <Empty
+          style={{ marginBlock: '80%' }}
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description='快去找好友聊天叭~'
+        />
+      ) : (
+        <VirtualList data={data} itemKey='uid' itemHeight={47} height={height}>
+          {item => (
+            <List.Item
+              key={item.uid}
+              onDoubleClick={() => handleOpenChat(item.uid)}>
+              <List.Item.Meta
+                avatar={
+                  <div className='list-avatar'>
+                    <Avatar
+                      icon={item.icon}
+                      size={eq(type, 'group') ? 'small' : 'large'}
+                    />
+                  </div>
+                }
+                title={
+                  <>
+                    {eq(type, 'message') ? (
+                      <>
+                        <sub className='list-info-time'>19:00</sub>
+                        <Badge
+                          count={item.content.length}
+                          size='small'
+                          offset={[-6, 26]}>
+                          {item.name}
+                        </Badge>
+                      </>
+                    ) : (
+                      item.name
+                    )}
+                  </>
+                }
+                description={
+                  eq(type, 'message') ? <small>{item.content}</small> : null
+                }
+              />
+            </List.Item>
+          )}
+        </VirtualList>
+      )}
     </List>
   );
 }

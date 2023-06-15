@@ -1,12 +1,13 @@
 .ant-list {
   &-item {
     position: relative;
+    padding: 6px 14px !important;
     transition: background 0.1s;
     user-select: none;
 
     &:hover {
       border-color: transparent;
-      background-color: rgba($color: #c9cdd4, $alpha: 0.6);
+      background-color: rgba($color: #c9cdd4, $alpha: 0.3);
     }
   }
 
@@ -38,5 +39,12 @@
 
   &-avatar {
     position: relative;
+  }
+
+  &-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 }
