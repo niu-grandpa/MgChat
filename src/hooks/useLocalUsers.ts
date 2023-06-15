@@ -25,7 +25,8 @@ export function useLocalUsers() {
 
   const set = useCallback(
     (data: LocalUsersType) => {
-      localData.current.push(data);
+      const { uid, icon, nickname, password, auto, remember } = data;
+      localData.current.push({ uid, icon, nickname, password, auto, remember });
       localStorage.setItem(
         'users',
         JSON.stringify(uniqBy(localData.current, 'uid'))

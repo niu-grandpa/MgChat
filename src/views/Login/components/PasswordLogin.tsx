@@ -19,7 +19,10 @@ import { FormInstance } from 'antd/es/form';
 import { ipcRenderer } from 'electron';
 import { eq } from 'lodash-es';
 import { memo, useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+
+import { apiHandler, userApi } from '@/services';
+import { UserInfo } from '@/services/typing';
+import { SaveData } from '..';
 import Waitting from './Waitting';
 
 type LoginWithPwd = {
@@ -29,18 +32,15 @@ type LoginWithPwd = {
 
 const { useForm, useWatch } = Form;
 
-function PasswordLogin() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [form] = useForm<LocalUsersType>();
+function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   const localUsers = useLocalUsers();
+  const [form] = useForm<LocalUsersType>();
 
   const [arrow, setArrow] = useState(false);
   const [avatar, setAvatar] = useState('');
   const [loading, setLoading] = useState(false);
 
   const uid: string = useWatch('uid', form as FormInstance);
-
   useEffect(() => {
     if (eq(uid, undefined)) return;
     if (!uid.length) {
@@ -52,23 +52,30 @@ function PasswordLogin() {
     }
   }, [uid, form]);
 
-  const handleSetUser = useCallback(
+  const handleGetLocalUser = useCallback(
     (uid: string) => {
       const { icon, nickname, ...rest } = localUsers.get(uid);
       setAvatar(icon);
       setArrow(v => !v);
       form.setFieldsValue(rest);
     },
-    [form]
+    [form, localUsers]
   );
 
-  const handleLogin = useCallbackPlus(async (values: LoginWithPwd) => {
-    // todo 去掉不必要字段、jwt加密
-    return values;
-  }, [])
+  const handleLogin = useCallbackPlus<UserInfo>(
+    async (values: LoginWithPwd) => {
+      const { uid, password } = values;
+      const res = await apiHandler(() =>
+        userApi.loginWithPwd({ uid, password })
+      );
+      if (!res) setLoading(false);
+      return res;
+    },
+    []
+  )
     .before(() => {
+      // 检查账号密码
       const { uid, password } = form.getFieldsValue();
-      setLoading(true);
       if (!uid || uid.length < 9) {
         message.error('请输入正确的账号');
         return false;
@@ -77,17 +84,9 @@ function PasswordLogin() {
         message.error('请输入您的密码');
         return false;
       }
-      setLoading(false);
+      setLoading(true);
     })
-    .after(data => {
-      setLoading(false);
-      localUsers.set(form.getFieldsValue());
-      // 这里使用路由跳转而不是打开新窗口
-      // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程
-      // 因此只需要渲染路由界面和调整窗口大小位置即可
-      navigate('/user', { replace: true, state: { uid } });
-      location.pathname = 'user';
-    });
+    .after(data => onSuccess({ ...data, ...form.getFieldsValue() }));
 
   const handleForget = useCallback(() => {
     const uid = form.getFieldValue('uid');
@@ -113,7 +112,7 @@ function PasswordLogin() {
           </Col>
         </Row>
       ),
-      onClick: () => handleSetUser(uid),
+      onClick: () => handleGetLocalUser(uid),
     }));
 
   return (

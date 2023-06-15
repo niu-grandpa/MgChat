@@ -1,6 +1,6 @@
 import Avatar from '@/components/Avatar';
 import NetAlert from '@/components/NetAlert';
-import { MessageData, MessageRoles } from '@/services/typing';
+import { MessageData } from '@/services/enum';
 import { Divider, Layout } from 'antd';
 import { memo, useEffect, useState } from 'react';
 

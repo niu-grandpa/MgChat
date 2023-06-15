@@ -5,11 +5,16 @@
 
   &-main {
     height: 100%;
-    border-right: 1px solid $color-border-1;
     background-color: $color-border-2 !important;
 
     &-nav {
       background: #2e323b;
+      .navbar {
+        height: 28px;
+        &-item {
+          line-height: 28px;
+        }
+      }
     }
 
     .panel {
@@ -37,7 +42,7 @@
 
     &-status {
       position: absolute;
-      top: 49px;
+      top: 53px;
       right: 8px;
 
       &.ant-badge-status .ant-badge-status-dot {
@@ -47,13 +52,13 @@
     }
 
     &-space {
-      margin-top: 28px;
+      margin-top: 24px;
       -webkit-app-region: no-drag;
 
       .logout {
         position: absolute;
-        bottom: 8px;
-        left: 8px;
+        bottom: 12px;
+        left: 4px;
       }
     }
 
@@ -65,16 +70,8 @@
 
       &.active {
         position: relative;
-        color: $color-success;
-        &::after {
-          position: absolute;
-          content: '';
-          width: 3px;
-          height: 40px;
-          right: -6px;
-          top: 0;
-          background-color: $color-success;
-        }
+        color: $color-primary-2;
+        background-color: rgba($color: #000000, $alpha: 0.1);
       }
     }
   }

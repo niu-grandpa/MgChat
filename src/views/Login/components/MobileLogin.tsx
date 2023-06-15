@@ -29,6 +29,7 @@ import {
 import { CarouselRef } from 'antd/es/carousel';
 import { eq } from 'lodash-es';
 import { memo, useCallback, useRef, useState } from 'react';
+import { SaveData } from '..';
 import Waitting from './Waitting';
 
 type LoginWithPhone = {
@@ -40,7 +41,7 @@ const { Title } = Typography;
 const { useForm } = Form;
 const { pwd } = getRegExp();
 
-function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
+function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   const [loginForm] = useForm<LoginWithPhone>();
   const [registerForm] = useForm<{ password: string; double: string }>();
 
@@ -49,7 +50,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
 
   const [code, setCode] = useState<string>('');
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [regLoading, setRegLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -61,15 +62,27 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
     setGender(-1);
     setNickname('');
     setOpen(false);
-    setLoading(false);
-    setIsLogin(false);
+    setRegLoading(false);
     setBtnLoading(false);
     registerForm.setFieldsValue({ password: undefined, double: undefined });
   }, []);
 
-  const handleLogin = useCallbackPlus<{ data: UserInfo }>(
-    (values: LoginWithPhone) => {
-      return apiHandler(() => userApi.loginWithMobile(values));
+  const handleSuccess = useCallback(
+    (data: UserInfo) => {
+      restData();
+      onSuccess({ ...data, remember: true, auto: true });
+    },
+    [restData, onSuccess]
+  );
+
+  const handleLogin = useCallbackPlus<UserInfo>(
+    async (values: LoginWithPhone) => {
+      const res = await apiHandler(() => userApi.loginWithMobile(values));
+      if (!res) {
+        setIsLogin(false);
+        setBtnLoading(false);
+      }
+      return res;
     },
     []
   )
@@ -82,21 +95,22 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
         Modal.confirm({
           width: 300,
           content: '是否使用该手机号码注册新用户?',
-          onOk: () => setOpen(true),
+          onOk: () => {
+            setOpen(true);
+            setBtnLoading(false);
+          },
           okText: '确定',
           cancelText: '取消',
           mask: false,
         });
         return data;
       }
+      setIsLogin(true);
     })
-    .after(({ data }) => {
-      restData();
-      onSuccess(data);
-    });
+    .after(data => handleSuccess(data));
 
-  const handleCreateUser = useCallbackPlus<{ data: UserInfo }>(async () => {
-    setLoading(true);
+  const handleCreateUser = useCallbackPlus<UserInfo>(async () => {
+    setRegLoading(true);
     return await apiHandler(() =>
       userApi.registerByPhone({
         nickname,
@@ -128,9 +142,9 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
         return false;
       }
     })
-    .after(({ data }) => {
-      handleLoginWithToken(data.token).then(() => onSuccess(data));
-    });
+    .after(data =>
+      handleLoginWithToken(data.token).then(() => handleSuccess(data))
+    );
 
   const handleLoginWithToken = useCallback(
     async (newToken: string) => {
@@ -173,7 +187,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: UserInfo) => void }) {
         onClose={restData}
         closeIcon={<LeftOutlined className='close-icon' />}>
         <Spin
-          spinning={loading}
+          spinning={regLoading}
           tip='等待注册回应...'
           indicator={<LoadingOutlined />}
           size='large'>

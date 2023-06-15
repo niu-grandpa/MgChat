@@ -16,16 +16,17 @@ export function apiHandler<T extends unknown>(
         return false;
       }
       return data;
-    } catch (error) {
+    } catch (error: any) {
+      // 2秒后重新发起请求
       if (!reload) {
-        await sleep(200);
+        await sleep(2000);
         reload = true;
         return await handler();
       } else {
-        message.error('接口调用发生错误');
-        console.log('[apiHandler] error: ', error);
+        message.error('请求失败');
+        console.error('[apiHandler] error: ', error.response.data);
+        return false;
       }
-      return false;
     } finally {
       reload = false;
     }

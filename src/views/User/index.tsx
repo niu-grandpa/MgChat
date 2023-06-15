@@ -1,7 +1,8 @@
 import NavBar from '@/components/NavBar';
+import { useUserData } from '@/model';
 import { Layout } from 'antd';
 import { ipcRenderer } from 'electron';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import ContentPanel from './component/ContentPanel';
 import SiderToolsBar from './component/SiderToolsBar';
@@ -11,13 +12,15 @@ const { Sider } = Layout;
 
 function UserPanel() {
   const { state } = useLocation() as { state: { login: boolean } };
+  const userModel = useUserData();
+  const data = useMemo(() => userModel.get(), [userModel]);
 
   const [tab, setTab] = useState(0);
 
   const changeWinShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
       key: 'main',
-      width: 300,
+      width: 294,
       height: 660,
       resizable: true,
     });
@@ -30,9 +33,7 @@ function UserPanel() {
 
   useEffect(() => {
     if (state.login) {
-      const userData = JSON.parse(sessionStorage.getItem('temporary') || '{}');
       changeWinShape();
-      console.log(userData);
     }
   }, [state]);
 
@@ -44,7 +45,7 @@ function UserPanel() {
         </div>
         <ContentPanel index={tab} />
       </Sider>
-      <Sider width={52} className='user-siderbar'>
+      <Sider width={46} className='user-siderbar'>
         <SiderToolsBar onChange={setTab} />
       </Sider>
     </Layout>

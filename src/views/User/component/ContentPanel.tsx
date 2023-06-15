@@ -1,7 +1,5 @@
 import UserList from '@/components/UserList';
 import { UserMsgList } from '@/services/typing';
-import { SearchOutlined } from '@ant-design/icons';
-import { Input } from 'antd';
 import { ipcRenderer } from 'electron';
 import { memo, useCallback, useState } from 'react';
 
@@ -42,7 +40,7 @@ function TabPanel({ index }: { index: number }) {
 
   return (
     <section className='panel'>
-      <div className='panel-search'>
+      {/* <div className='panel-search'>
         <Input
           size='small'
           bordered={false}
@@ -51,7 +49,7 @@ function TabPanel({ index }: { index: number }) {
           allowClear
           style={{ width: 160 }}
         />
-      </div>
+      </div> */}
       <UserList type='message' data={data} onItemDbClick={handleOpenChat} />
     </section>
   );

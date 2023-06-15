@@ -1,6 +1,7 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
 import { useLocalUsers } from '@/hooks';
+import { useUserData } from '@/model';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
 import { useCallback } from 'react';
@@ -9,33 +10,30 @@ import MobileLogin from './components/MobileLogin';
 import PasswordLogin from './components/PasswordLogin';
 import './index.scss';
 
+export type SaveData = UserInfo & { auto: boolean; remember: boolean };
+
 const { Header, Content } = Layout;
 
 function LoginView() {
   const localUser = useLocalUsers();
+  const userModel = useUserData();
   const navTo = useNavigate();
 
   const handleSaveData = useCallback(
-    (data: UserInfo) => {
-      const { uid, token, icon, nickname, password } = data;
-      localStorage.setItem('token', token);
-      // 用户数据通过sessionStorage临时存储起来，方便页面间传递
-      sessionStorage.setItem('temporary', JSON.stringify(data));
-      localUser.set({
-        uid,
-        icon,
-        nickname,
-        password,
-        auto: true,
-        remember: true,
-      });
+    (data: SaveData) => {
+      userModel.save(data);
+      localUser.set(data);
+      localStorage.setItem('token', data.token);
     },
-    [localUser]
+    [localUser, userModel]
   );
 
   const handleLoginSuccess = useCallback(
-    (data: UserInfo) => {
+    (data: SaveData) => {
       handleSaveData(data);
+      // 使用路由跳转而不是打开新窗口，
+      // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程，
+      // 因此只需要渲染路由界面和调整窗口大小位置即可。
       navTo('/user', { state: { login: true } });
     },
     [handleSaveData]
@@ -45,7 +43,7 @@ function LoginView() {
     {
       key: 'password',
       label: `密码登录`,
-      children: <PasswordLogin />,
+      children: <PasswordLogin onSuccess={handleLoginSuccess} />,
     },
     {
       key: 'mobile',

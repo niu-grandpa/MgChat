@@ -1,4 +1,4 @@
-import UAvatar from '@/components/Avatar';
+import Avatar from '@/components/Avatar';
 import {
   LogoutOutlined,
   MessageOutlined,
@@ -27,7 +27,7 @@ function SiderToolsBar({ onChange }: { onChange: (tab: number) => void }) {
   return (
     <>
       <div>
-        <UAvatar size='large' />
+        <Avatar size='large' />
         <Badge status='success' className='user-siderbar-status' />
       </div>
       <Space wrap direction='vertical' className='user-siderbar-space'>
