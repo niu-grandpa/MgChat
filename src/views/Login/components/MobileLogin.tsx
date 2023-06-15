@@ -122,7 +122,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   }, [gender, current, nickname, registerForm, loginForm])
     .before(() => {
       if (eq(gender, -1)) {
-        message.error('至少选择一个性别');
+        message.error('请选择您的性别');
         return false;
       }
       if (eq(current, 1) && eq(nickname.length, 0)) {
@@ -171,7 +171,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
             type='primary'
             htmlType='submit'
             loading={btnLoading}
-            style={{ marginTop: 14 }}>
+            style={{ marginTop: 10 }}>
             登录
           </Button>
         </Form.Item>

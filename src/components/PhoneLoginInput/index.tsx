@@ -1,5 +1,4 @@
 import { useCallbackPlus, useCheckVerificationCode } from '@/hooks';
-import { VerificationCode } from '@/services/typing';
 import { getRegExp } from '@/utils';
 import { PhoneOutlined } from '@ant-design/icons';
 import { Button, Form, Input, message } from 'antd';
@@ -19,7 +18,7 @@ type Props = {
   addonBefore: ReactNode;
   defaultVal: string;
   inputWidth: number;
-  onGetCode: (data: any) => void;
+  onSendCode: (code: string) => void;
   disabledWhenHasPhone: boolean;
 };
 
@@ -27,7 +26,7 @@ const { phone } = getRegExp();
 
 function PhoneLoginInput({
   prefix,
-  onGetCode,
+  onSendCode,
   addonBefore,
   defaultVal,
   inputWidth,
@@ -66,13 +65,8 @@ function PhoneLoginInput({
     btnRef.current!.innerText = `重新获取 ${countdown.current--}s`;
   }, [timer, countdown, btnRef]);
 
-  const handleSend = useCallbackPlus<VerificationCode>(() => {
-    // todo 发送验证码 & 返回验证码+手机
-    return {
-      phoneNumber: '15302541396',
-      code: '1234',
-      endTime: Date.now() + 120000,
-    };
+  const handleSend = useCallbackPlus(() => {
+    // todo 发送验证码
   }, [])
     .before(() => {
       if (timer.current) return false;
@@ -80,9 +74,8 @@ function PhoneLoginInput({
       message.success('验证码已发送');
       timer.current = setInterval(timing, 1000);
     })
-    .after(({ phoneNumber, code, endTime }) => {
-      setCode(phoneNumber, code, endTime);
-      onGetCode?.({});
+    .after(() => {
+      onSendCode?.('');
     });
 
   return (
