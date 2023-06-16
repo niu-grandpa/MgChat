@@ -1,4 +1,5 @@
-import { useCallbackPlus, useCheckVerificationCode } from '@/hooks';
+import { useCallbackPlus } from '@/hooks';
+import { apiHandler, captchaApi } from '@/services';
 import { getRegExp } from '@/utils';
 import { PhoneOutlined } from '@ant-design/icons';
 import { Button, Form, Input, message } from 'antd';
@@ -17,7 +18,6 @@ type Props = {
   prefix: ReactNode;
   addonBefore: ReactNode;
   defaultVal: string;
-  inputWidth: number;
   onSendCode: (code: string) => void;
   disabledWhenHasPhone: boolean;
 };
@@ -29,29 +29,25 @@ function PhoneLoginInput({
   onSendCode,
   addonBefore,
   defaultVal,
-  inputWidth,
   disabledWhenHasPhone,
 }: Partial<Props>) {
-  const { set: setCode, createMap } = useCheckVerificationCode();
-
-  const [isSend, setIsSend] = useState(false);
-  const [pnumber, setpNumber] = useState(defaultVal || '');
-
   const countdown = useRef(59);
   const btnRef = useRef<HTMLElement>(null);
   const timer = useRef<NodeJS.Timer | null>(null);
 
+  const [isSend, setIsSend] = useState(false);
+  const [pnumber, setpNumber] = useState(defaultVal || '');
+
   const disabled = useMemo(() => !phone.test(pnumber), [pnumber]);
 
   useEffect(() => {
-    createMap();
     return () => {
       if (timer.current) {
         clearInterval(timer.current);
         timer.current = null;
       }
     };
-  }, []);
+  }, [timer]);
 
   const timing = useCallback(() => {
     if (countdown.current <= 0) {
@@ -65,18 +61,16 @@ function PhoneLoginInput({
     btnRef.current!.innerText = `重新获取 ${countdown.current--}s`;
   }, [timer, countdown, btnRef]);
 
-  const handleSend = useCallbackPlus(() => {
-    // todo 发送验证码
-  }, [])
+  const handleSend = useCallbackPlus<number>(async () => {
+    return await apiHandler(() => captchaApi.send(pnumber));
+  }, [pnumber])
     .before(() => {
       if (timer.current) return false;
       setIsSend(true);
       message.success('验证码已发送');
       timer.current = setInterval(timing, 1000);
     })
-    .after(() => {
-      onSendCode?.('');
-    });
+    .after(code => onSendCode?.(code.toString()));
 
   return (
     <>

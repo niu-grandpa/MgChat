@@ -86,7 +86,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
     },
     []
   )
-    .before(async ({ phoneNumber, code }: LoginWithPhone) => {
+    .before(async ({ phoneNumber }: LoginWithPhone) => {
       setBtnLoading(true);
       // 如果未查询到用户信息则要么注册要么不登录
       const data = await apiHandler(() => userApi.getUser({ phoneNumber }));
@@ -164,7 +164,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
       <Avatar size={58} className='login-avatar' />
       {/* 登录框 */}
       <Form form={loginForm} onFinish={handleLogin.invoke}>
-        <PhoneLoginInput />
+        <PhoneLoginInput onSendCode={setCode} />
         <Form.Item>
           <Button
             block

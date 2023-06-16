@@ -5,7 +5,7 @@ import { ResponseData } from './typing';
 type Result<T> = Promise<false | T>;
 
 /**
- * 处理当接口调用时出错
+ * 当接口调用出错时处理其他边界条件
  * @param callback api函数
  * @returns
  */
