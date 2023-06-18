@@ -1,4 +1,3 @@
-import { useGetWinKey } from '@/hooks';
 import {
   BorderOutlined,
   CloseOutlined,
@@ -6,43 +5,34 @@ import {
 } from '@ant-design/icons';
 import { Layout } from 'antd';
 import { ipcRenderer } from 'electron';
-import { useCallback } from 'react';
+import { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 
 function ChatHeader() {
-  const key = useGetWinKey();
-
-  const handler = useCallback((type: 'mini' | 'max' | 'close') => {
-    const methods = {
-      mini: () => ipcRenderer.send('min-win', { key }),
-      max: () => ipcRenderer.send('max-win', { key }),
+  const { pathname } = useLocation();
+  const fn = useMemo(
+    () => ({
+      minimize: () => ipcRenderer.send('minimize', { pathname }),
+      maximize: () => ipcRenderer.send('maximize', { pathname }),
       close: () => {
-        console.log(key);
-        ipcRenderer.send('close-win', { key, keepAlive: true });
+        console.log(pathname);
+        ipcRenderer.send('close-win', { pathname, keepAlive: true });
       },
-    };
-    return methods[type]();
-  }, []);
+    }),
+    [pathname]
+  );
 
   return (
     <Layout.Header className='chat-header'>
       <a className='nickname'>网点文档</a>
       <nav className='menubar'>
-        <span
-          className='menubar-item'
-          title='最小化'
-          onClick={() => handler('mini')}>
+        <span className='menubar-item' title='最小化' onClick={fn['minimize']}>
           <MinusOutlined />
         </span>
-        <span
-          className='menubar-item'
-          title='最大化'
-          onClick={() => handler('max')}>
+        <span className='menubar-item' title='最大化' onClick={fn['maximize']}>
           <BorderOutlined />
         </span>
-        <span
-          className='menubar-item'
-          title='关闭'
-          onClick={() => handler('close')}>
+        <span className='menubar-item' title='关闭' onClick={fn['close']}>
           <CloseOutlined />
         </span>
       </nav>

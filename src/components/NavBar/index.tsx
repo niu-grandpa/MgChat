@@ -20,13 +20,13 @@ function Navbar({ items }: NavbarProps) {
       {
         title: '最小化',
         icon: <MinusOutlined />,
-        onClick: () => ipcRenderer.send('min-win', { key: 'main' }),
+        onClick: () => ipcRenderer.send('minimize', { pathname: '/' }),
       },
       {
         title: '关闭',
         icon: <CloseOutlined />,
         danger: true,
-        onClick: () => ipcRenderer.send('close-win', { key: 'main' }),
+        onClick: () => ipcRenderer.send('close-win', { pathname: '/' }),
       },
       ...(items || []),
     ],

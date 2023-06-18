@@ -18,7 +18,6 @@ type Props = {
   prefix: ReactNode;
   addonBefore: ReactNode;
   defaultVal: string;
-  onSendCode: (code: string) => void;
   disabledWhenHasPhone: boolean;
 };
 
@@ -26,7 +25,6 @@ const { phone } = getRegExp();
 
 function PhoneLoginInput({
   prefix,
-  onSendCode,
   addonBefore,
   defaultVal,
   disabledWhenHasPhone,
@@ -63,14 +61,12 @@ function PhoneLoginInput({
 
   const handleSend = useCallbackPlus<number>(async () => {
     return await apiHandler(() => captchaApi.send(pnumber));
-  }, [pnumber])
-    .before(() => {
-      if (timer.current) return false;
-      setIsSend(true);
-      message.success('验证码已发送');
-      timer.current = setInterval(timing, 1000);
-    })
-    .after(code => onSendCode?.(code.toString()));
+  }, [pnumber]).before(() => {
+    if (timer.current) return false;
+    setIsSend(true);
+    message.success('验证码已发送');
+    timer.current = setInterval(timing, 1000);
+  });
 
   return (
     <>

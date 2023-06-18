@@ -48,7 +48,6 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   const carousel = useRef<CarouselRef>(null);
   const token = useRef(localStorage.getItem('token') || '');
 
-  const [code, setCode] = useState<string>('');
   const [open, setOpen] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
@@ -94,7 +93,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
         // 转入注册流程，如果注册成功使用token登录
         Modal.confirm({
           width: 300,
-          content: '是否使用该手机号码注册新用户?',
+          content: '进入新用户快速注册?',
           onOk: () => {
             setOpen(true);
             setBtnLoading(false);
@@ -164,7 +163,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
       <Avatar size={58} className='login-avatar' />
       {/* 登录框 */}
       <Form form={loginForm} onFinish={handleLogin.invoke}>
-        <PhoneLoginInput onSendCode={setCode} />
+        <PhoneLoginInput />
         <Form.Item>
           <Button
             block

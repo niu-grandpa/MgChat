@@ -1,7 +1,7 @@
 import { BrowserWindow, app } from 'electron';
 import { release } from 'node:os';
 import { join } from 'node:path';
-import client from './client';
+import subprocess from './subprocess';
 
 // The built directory structure
 //
@@ -35,19 +35,21 @@ if (!app.requestSingleInstanceLock()) {
 // Read more on https://www.electronjs.org/docs/latest/tutorial/security
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
+const url = process.env.VITE_DEV_SERVER_URL;
+const indexHtml = join(process.env.DIST, 'index.html');
 let win: BrowserWindow | null = null;
 
-const createMainWindow = () => {
-  client.capacity = 3;
-  client.registerListeners();
-  win = client.createMain('/');
-};
+subprocess.registerListeners();
+subprocess.autoClearCache();
+subprocess.init({ indexHtml, url, capacity: 3 });
+
+const createMainWindow = () => (win = subprocess.createMain('/'));
 
 app.whenReady().then(createMainWindow);
 
 app.on('window-all-closed', () => {
   win = null;
-  client.destroy();
+  subprocess.destroy();
   if (process.platform !== 'darwin') app.quit();
 });
 

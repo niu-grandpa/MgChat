@@ -20,14 +20,14 @@ function UserPanel() {
 
   const changeWinShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
-      key: 'main',
+      pathname: '/',
       ...mainWinSize,
       resizable: true,
     });
-    ipcRenderer.send('set-position', {
-      key: 'main',
-      marginRight: 320,
-      y: 60,
+    ipcRenderer.send('adjust-win-pos', {
+      pathname: '/',
+      top: 60,
+      leftDelta: 320,
     });
   }, []);
 
