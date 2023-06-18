@@ -2,7 +2,7 @@ import defaultAvatar from '@/assets/icons/avatar.png';
 import { Avatar, AvatarProps } from 'antd';
 import { memo } from 'react';
 
-function UAvatar(props: { icon?: string } & AvatarProps) {
+function MyAvatar(props: { icon?: string } & AvatarProps) {
   const { icon, ...rest } = props;
   return (
     <Avatar
@@ -13,4 +13,4 @@ function UAvatar(props: { icon?: string } & AvatarProps) {
   );
 }
 
-export default memo(UAvatar);
+export default memo(MyAvatar);

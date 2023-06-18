@@ -1,4 +1,3 @@
-import { mainWinSize } from '@/views/User';
 import { Badge, Empty, List } from 'antd';
 import { eq } from 'lodash';
 import VirtualList from 'rc-virtual-list';
@@ -12,7 +11,7 @@ type Props = {
   onItemDbClick?: (uid: number) => void;
 };
 
-const height = mainWinSize.height - 36;
+const listHeight = 660 - 36;
 
 function UserList({ type, data, onItemDbClick }: Props) {
   const handleOpenChat = useCallback(
@@ -26,10 +25,14 @@ function UserList({ type, data, onItemDbClick }: Props) {
         <Empty
           style={{ marginBlock: '80%' }}
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description='快去找好友聊天叭~'
+          description='无数据~'
         />
       ) : (
-        <VirtualList data={data} itemKey='uid' itemHeight={47} height={height}>
+        <VirtualList
+          data={data}
+          itemKey='uid'
+          itemHeight={47}
+          height={listHeight}>
           {item => (
             <List.Item
               key={item.uid}

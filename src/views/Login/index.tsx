@@ -1,6 +1,6 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
-import { useLocalUsers } from '@/hooks';
+import { useSleep as sleep, useLocalUsers } from '@/hooks';
 import { useUserData } from '@/model';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
@@ -34,7 +34,7 @@ function LoginView() {
       // 使用路由跳转而不是打开新窗口，
       // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程，
       // 因此只需要渲染路由界面和调整窗口大小位置即可。
-      navTo('/user', { state: { login: true } });
+      sleep(2000).then(() => navTo('/user', { state: { login: true } }));
     },
     [handleSaveData]
   );

@@ -8,7 +8,6 @@ import ContentPanel from './component/ContentPanel';
 import SiderToolsBar from './component/SiderToolsBar';
 import './index.scss';
 
-export const mainWinSize = { width: 294, height: 660 };
 const { Sider } = Layout;
 
 function UserPanel() {
@@ -21,7 +20,8 @@ function UserPanel() {
   const changeWinShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
       pathname: '/',
-      ...mainWinSize,
+      width: 220,
+      height: 660,
       resizable: true,
     });
     ipcRenderer.send('adjust-win-pos', {

@@ -19,7 +19,6 @@ import {
   Drawer,
   Form,
   Input,
-  Modal,
   Radio,
   Space,
   Spin,
@@ -48,9 +47,9 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   const carousel = useRef<CarouselRef>(null);
   const token = useRef(localStorage.getItem('token') || '');
 
-  const [open, setOpen] = useState(false);
+  const [openReg, setOpenReg] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
-  const [isLogin, setIsLogin] = useState(false);
+  const [logging, setLogging] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
   const [current, setCurrent] = useState(0);
   const [gender, setGender] = useState(-1);
@@ -60,7 +59,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
     setCurrent(0);
     setGender(-1);
     setNickname('');
-    setOpen(false);
+    setOpenReg(false);
     setRegLoading(false);
     setBtnLoading(false);
     registerForm.setFieldsValue({ password: undefined, double: undefined });
@@ -75,38 +74,24 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   );
 
   const handleLogin = useCallbackPlus<UserInfo>(
-    async (values: LoginWithPhone) => {
-      const res = await apiHandler(() => userApi.loginWithMobile(values));
-      if (!res) {
-        setIsLogin(false);
-        setBtnLoading(false);
-      }
-      return res;
+    (data: UserInfo) => {
+      handleSuccess(data);
     },
-    []
-  )
-    .before(async ({ phoneNumber }: LoginWithPhone) => {
-      setBtnLoading(true);
-      // 如果未查询到用户信息则要么注册要么不登录
-      const data = await apiHandler(() => userApi.getUser({ phoneNumber }));
-      if (!data) {
-        // 转入注册流程，如果注册成功使用token登录
-        Modal.confirm({
-          width: 300,
-          content: '进入新用户快速注册?',
-          onOk: () => {
-            setOpen(true);
-            setBtnLoading(false);
-          },
-          okText: '确定',
-          cancelText: '取消',
-          mask: false,
-        });
-        return data;
-      }
-      setIsLogin(true);
-    })
-    .after(data => handleSuccess(data));
+    [handleSuccess]
+  ).before(async (values: LoginWithPhone) => {
+    setLogging(true);
+    setBtnLoading(true);
+    // 如果未查询到用户信息则要么注册要么不登录
+    const res = await apiHandler(() => userApi.loginWithMobile(values));
+    if (!res) {
+      setLogging(false);
+      setBtnLoading(false);
+      // 转入注册流程，如果注册成功使用token登录
+      setOpenReg(true);
+      return res;
+    }
+    return res;
+  });
 
   const handleCreateUser = useCallbackPlus<UserInfo>(async () => {
     setRegLoading(true);
@@ -148,7 +133,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   const handleLoginWithToken = useCallback(
     async (newToken: string) => {
       if (newToken) token.current = newToken;
-      setIsLogin(true);
+      setLogging(true);
       const data = await apiHandler(() =>
         userApi.loginWithToken(token.current)
       );
@@ -160,7 +145,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
 
   return (
     <>
-      <Avatar size={58} className='login-avatar' />
+      <Avatar size={56} className='login-avatar' />
       {/* 登录框 */}
       <Form form={loginForm} onFinish={handleLogin.invoke}>
         <PhoneLoginInput />
@@ -176,10 +161,10 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
         </Form.Item>
       </Form>
       {/* 登录等待 */}
-      <Waitting open={isLogin} />
+      <Waitting open={logging} />
       {/* 注册 */}
       <Drawer
-        {...{ open }}
+        {...{ openReg }}
         width='100%'
         destroyOnClose
         className='mb-register-drawer'

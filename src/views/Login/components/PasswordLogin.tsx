@@ -38,7 +38,7 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
 
   const [arrow, setArrow] = useState(false);
   const [avatar, setAvatar] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [logging, setLogging] = useState(false);
 
   const uid: string = useWatch('uid', form as FormInstance);
   useEffect(() => {
@@ -68,7 +68,7 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
       const res = await apiHandler(() =>
         userApi.loginWithPwd({ uid, password })
       );
-      if (!res) setLoading(false);
+      if (!res) setLogging(false);
       return res;
     },
     []
@@ -84,7 +84,7 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
         message.error('请输入您的密码');
         return false;
       }
-      setLoading(true);
+      setLogging(true);
     })
     .after(data => onSuccess({ ...data, ...form.getFieldsValue() }));
 
@@ -117,8 +117,8 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
 
   return (
     <>
-      <Waitting open={loading} />
-      <Avatar icon={avatar} size={58} className='login-avatar' />
+      <Waitting open={logging} />
+      <Avatar icon={avatar} size={56} className='login-avatar' />
       <Form
         form={form}
         className='pwd-login'
@@ -154,7 +154,7 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
           </Form.Item>
         </Dropdown>
         <PwdFormInput name='password' />
-        <Form.Item style={{ marginBottom: 0 }}>
+        <Form.Item style={{ marginBottom: 0, height: 36 }}>
           <Space size='large'>
             <Form.Item name='auto' valuePropName='checked'>
               <Checkbox>自动登录</Checkbox>

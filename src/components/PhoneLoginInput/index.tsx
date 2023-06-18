@@ -1,7 +1,7 @@
 import { useCallbackPlus } from '@/hooks';
 import { apiHandler, captchaApi } from '@/services';
 import { getRegExp } from '@/utils';
-import { PhoneOutlined } from '@ant-design/icons';
+import { NumberOutlined, PhoneOutlined } from '@ant-design/icons';
 import { Button, Form, Input, message } from 'antd';
 import { eq } from 'lodash-es';
 import {
@@ -94,6 +94,7 @@ function PhoneLoginInput({
         <Input
           type='number'
           placeholder='短信验证码'
+          prefix={<NumberOutlined />}
           suffix={
             <Button
               ref={btnRef}

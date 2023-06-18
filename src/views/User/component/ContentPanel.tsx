@@ -7,13 +7,11 @@ function TabPanel({ index }: { index: number }) {
 
   const handleItemClick = useCallback((uid: number) => {
     ipcRenderer.send('open-win', {
-      key: 'chat',
+      pathname: '/chat',
       title: '聊天',
-      frame: false,
-      alive: true,
       width: 580,
       height: 520,
-      search: `?uid=${uid}`,
+      keepAlive: true,
     });
   }, []);
 

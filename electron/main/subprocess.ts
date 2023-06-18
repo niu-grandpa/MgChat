@@ -78,7 +78,7 @@ class ClientSubprocess {
       // 重设为最近添加，假如重设数字2：1 - 2 - 3 ---> 1 - 3 - 2
       if (backgroundCache.has(pathname)) backgroundCache.delete(pathname);
       backgroundCache.set(pathname, instance);
-      setInstanceCache(pathname, instance);
+      setInstanceCache(pathname, instance, false);
     },
 
     get(pathname: string): BrowserWindow | null {
@@ -108,10 +108,14 @@ class ClientSubprocess {
    * @param pathname 路由路径名
    * @param win
    */
-  static setInstanceCache(pathname: string, win: BrowserWindow) {
+  static setInstanceCache(
+    pathname: string,
+    win: BrowserWindow,
+    active: boolean
+  ) {
     ClientSubprocess.windowInstanceCache.set(pathname, {
       instance: win,
-      active: true,
+      active,
       expired: Date.now() + 15 * 60 * 1000,
     });
   }
@@ -203,12 +207,8 @@ class ClientSubprocess {
   ) {
     const win = ClientSubprocess.windowInstanceCache.get(pathname);
     if (!win) return;
-
     const { instance } = win;
-    const [originalW, originalH] = instance.getContentSize();
-
-    if (width) instance.setSize(width, originalH, true);
-    if (height) instance.setSize(originalW, height, true);
+    instance.setSize(width!, height!, true);
     if (resizable !== undefined) instance.setResizable(resizable);
   }
 
@@ -238,7 +238,8 @@ class ClientSubprocess {
     _: any,
     { pathname, backgroundCache, onClose }: CloseWindowArgs
   ) {
-    const { windowInstanceCache, keepAlive } = ClientSubprocess;
+    const { windowInstanceCache, keepAlive, setInstanceCache } =
+      ClientSubprocess;
 
     if (!windowInstanceCache.has(pathname)) {
       console.error(`[ClientSubprocess] error: '${pathname}' dose not exist`);
@@ -259,7 +260,7 @@ class ClientSubprocess {
       keepAlive.put(pathname, instance);
     } else {
       instance.close();
-      windowInstanceCache.delete(pathname);
+      setInstanceCache(pathname, instance, false);
     }
   }
 
@@ -278,7 +279,7 @@ class ClientSubprocess {
     // Map缓存优化
     if (windowInstanceCache.has(pathname)) {
       const { instance } = windowInstanceCache.get(pathname)!;
-      setInstanceCache(pathname, instance);
+      setInstanceCache(pathname, instance, true);
       return instance;
     }
 
@@ -298,7 +299,7 @@ class ClientSubprocess {
       },
     });
 
-    setInstanceCache(pathname, win);
+    setInstanceCache(pathname, win, true);
 
     this.loadPage(pathname, win);
 
@@ -346,7 +347,7 @@ class ClientSubprocess {
     const cleanup = () => {
       if (!list.size) return;
       for (const [key, { instance, active, expired, close }] of list) {
-        if (!active && expired < Date.now()) {
+        if (key !== '/' && !active && expired < Date.now()) {
           close && instance.on('close', close);
           instance.close();
           backgroundCache.delete(key);
