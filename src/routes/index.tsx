@@ -1,5 +1,6 @@
 import LazyImport from '@/components/LazyImport';
 import { RouteObject } from 'react-router-dom';
+import childrenRoutes from './children';
 
 export default [
   {
@@ -10,6 +11,7 @@ export default [
   {
     path: '/user',
     element: <LazyImport comp={() => import('@/views/User')} />,
+    children: childrenRoutes.user,
   },
   {
     path: '/register',
@@ -20,7 +22,7 @@ export default [
     element: <LazyImport comp={() => import('@/views/Forget')} />,
   },
   {
-    path: '/chat',
-    element: <LazyImport comp={() => import('@/views/User/Chat')} />,
+    path: '/find',
+    element: '',
   },
 ] as RouteObject[];

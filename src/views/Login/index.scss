@@ -14,7 +14,7 @@
 
   &-header {
     position: relative;
-    height: 90px;
+    height: 87px;
     padding: 0;
     background-color: $color-light;
     background-image: url('../../assets/icons/background.svg');
@@ -23,11 +23,12 @@
 
   &-avatar {
     position: fixed;
-    top: 7%;
+    top: 8%;
     left: 50%;
     transform: translateX(-50%);
     border: 3px solid $color-primary-2;
-    box-shadow: 0 0 20px rgb(75, 157, 226);
+    border-radius: 50%;
+    box-shadow: 0 0 20px $color-primary-5;
     -webkit-app-region: no-drag;
     pointer-events: none;
   }
@@ -62,7 +63,7 @@
       display: flex;
       height: 100%;
       position: relative;
-      top: -18px;
+      top: -10px;
       justify-content: center;
       align-items: center;
     }

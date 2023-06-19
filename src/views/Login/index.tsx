@@ -21,7 +21,7 @@ function LoginView() {
 
   const handleSaveData = useCallback(
     (data: SaveData) => {
-      userModel.save(data);
+      userModel.saveUser(data);
       localUser.set(data);
       localStorage.setItem('token', data.token);
     },

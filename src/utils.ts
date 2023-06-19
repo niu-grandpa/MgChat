@@ -1,3 +1,10 @@
+import dayjs from 'dayjs';
+import isToday from 'dayjs/plugin/isToday';
+import isYesterday from 'dayjs/plugin/isYesterday';
+
+dayjs.extend(isToday);
+dayjs.extend(isYesterday);
+
 export function getRegExp() {
   // 昵称要求1-12位字符，只能包含汉字/数字/字母和下划线
   const name = /^[\u4e00-\u9fa5a-zA-Z0-9]{1,12}$/;
@@ -16,4 +23,16 @@ export function getRegExp() {
 
 export function formatPhoneNumber(phone: string): string {
   return `${phone.slice(0, 3)}*****${phone.slice(8)}`;
+}
+
+export function formatDate(timestamp: number) {
+  const now = dayjs(timestamp);
+  const isTdy = now.isToday();
+  const isYstd = now.isYesterday();
+
+  return isTdy
+    ? now.format('HH:mm')
+    : isYstd
+    ? '昨天'
+    : now.format('YYYY/MM/DD');
 }

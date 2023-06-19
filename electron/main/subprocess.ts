@@ -178,6 +178,8 @@ class ClientSubprocess {
     // Apply electron-updater
     update(win);
 
+    this.loadPage(pathname, win);
+
     return win;
   }
 

@@ -73,25 +73,26 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
     [restData, onSuccess]
   );
 
-  const handleLogin = useCallbackPlus<UserInfo>(
-    (data: UserInfo) => {
-      handleSuccess(data);
+  const handleLogin = useCallback(
+    async (values: LoginWithPhone) => {
+      setLogging(true);
+      setBtnLoading(true);
+
+      const res = await apiHandler(() => userApi.loginWithMobile(values));
+
+      // 如果未查询到用户信息则要么注册要么不登录
+      if (!res) {
+        setLogging(false);
+        setBtnLoading(false);
+        // 转入注册流程，如果注册成功使用token登录
+        setOpenReg(true);
+        return;
+      }
+
+      handleSuccess(res);
     },
     [handleSuccess]
-  ).before(async (values: LoginWithPhone) => {
-    setLogging(true);
-    setBtnLoading(true);
-    // 如果未查询到用户信息则要么注册要么不登录
-    const res = await apiHandler(() => userApi.loginWithMobile(values));
-    if (!res) {
-      setLogging(false);
-      setBtnLoading(false);
-      // 转入注册流程，如果注册成功使用token登录
-      setOpenReg(true);
-      return res;
-    }
-    return res;
-  });
+  );
 
   const handleCreateUser = useCallbackPlus<UserInfo>(async () => {
     setRegLoading(true);
@@ -147,7 +148,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
     <>
       <Avatar size={56} className='login-avatar' />
       {/* 登录框 */}
-      <Form form={loginForm} onFinish={handleLogin.invoke}>
+      <Form form={loginForm} onFinish={handleLogin}>
         <PhoneLoginInput />
         <Form.Item>
           <Button

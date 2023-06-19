@@ -1,4 +1,4 @@
-import { UserStatus } from './enum';
+import { MessageRole, UserStatus } from './enum';
 
 export type ResponseData<T> = Promise<{
   code: number;
@@ -6,7 +6,7 @@ export type ResponseData<T> = Promise<{
   data: T;
 }>;
 
-export interface UserInfo {
+export type UserInfo = {
   icon: string;
   city: string;
   age: number;
@@ -21,7 +21,7 @@ export interface UserInfo {
   uid: string;
   password: string;
   phoneNumber: string;
-  friends: UserInfo[];
+  friends: FriendsInfo[];
   groups: GroupInfo[];
   timeInfo: {
     loginTime: number;
@@ -30,12 +30,37 @@ export interface UserInfo {
     createTime: number;
     expiredTime: number;
   };
-}
+};
 
-export interface GroupInfo {
+export type GroupInfo = {
   gid: number;
   name: string;
   owner: UserInfo;
   member: UserInfo[];
   createTime: number;
-}
+};
+
+export type FriendsInfo = {
+  uid: string;
+  icon: string;
+  age: number;
+  status: UserStatus;
+  level: number;
+  nickname: string;
+  phoneNumber: string;
+};
+
+export type UserMessage = {
+  who: string;
+  icon: string;
+  nickname: string;
+  message: {
+    role: MessageRole;
+    content: string;
+    image: string;
+    hidden: boolean;
+    createTime: number;
+    cid: string;
+    isRead: boolean;
+  }[];
+};

@@ -1,26 +1,27 @@
 import NavBar from '@/components/NavBar';
 import { useUserData } from '@/model';
+import { UserInfo } from '@/services/typing';
 import { Layout } from 'antd';
 import { ipcRenderer } from 'electron';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import ContentPanel from './component/ContentPanel';
-import SiderToolsBar from './component/SiderToolsBar';
+import { Outlet, useLocation } from 'react-router-dom';
+import RightOptionBar from './components/RightOptionBar';
 import './index.scss';
 
 const { Sider } = Layout;
 
-function UserPanel() {
+function UserView() {
   const { state } = useLocation() as { state: { login: boolean } };
+
   const userModel = useUserData();
-  const data = useMemo(() => userModel.get(), [userModel]);
+  const userData = useMemo(() => userModel.get<UserInfo>('user'), [userModel]);
 
   const [tab, setTab] = useState(0);
 
-  const changeWinShape = useCallback(() => {
+  const handleChangeShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
       pathname: '/',
-      width: 220,
+      width: 295,
       height: 660,
       resizable: true,
     });
@@ -32,10 +33,8 @@ function UserPanel() {
   }, []);
 
   useEffect(() => {
-    if (state.login) {
-      changeWinShape();
-    }
-  }, [state]);
+    if (state && state.login) handleChangeShape();
+  }, [state, handleChangeShape]);
 
   return (
     <Layout className='user'>
@@ -43,13 +42,17 @@ function UserPanel() {
         <div className='user-main-nav'>
           <NavBar />
         </div>
-        <ContentPanel index={tab} />
+        <Outlet />
       </Sider>
       <Sider width={46} className='user-siderbar'>
-        <SiderToolsBar onChange={setTab} />
+        <RightOptionBar
+          status={userData.status}
+          icon={userData.icon}
+          onChange={setTab}
+        />
       </Sider>
     </Layout>
   );
 }
 
-export default UserPanel;
+export default UserView;

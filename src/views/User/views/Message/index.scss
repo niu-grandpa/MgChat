@@ -1,0 +1,38 @@
+@import '@/assets/color.scss';
+
+.msg {
+  -webkit-app-region: no-drag;
+  user-select: none;
+
+  &-list {
+    .ant-list-item {
+      padding: 12px;
+
+      &:hover {
+        background-color: rgba($color: #d6d7d8, $alpha: 0.5);
+      }
+
+      &-meta {
+        &-title {
+          margin-bottom: 2px !important;
+        }
+        &-avatar {
+          margin-inline-end: 8px !important;
+        }
+        &-description {
+          width: 155px;
+          font-size: 11px !important;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    &-extra {
+      font-size: 13px;
+      text-align: right;
+      color: $color-gray-1;
+    }
+  }
+}
