@@ -28,7 +28,7 @@ type CreateChildArgs = {
 
 type CloseWindowArgs = {
   pathname: string;
-  backgroundCache: boolean;
+  keepAlive: boolean;
   onClose?: () => void;
 };
 
@@ -73,19 +73,26 @@ class ClientSubprocess {
    * @returns
    */
   static keepAlive = {
-    put: (pathname: string, instance: BrowserWindow) => {
+    has: (key: string) => this.backgroundCache.has(key),
+
+    put: (pathname: string, instance: BrowserWindow, active = false) => {
       const { backgroundCache, setInstanceCache } = this;
+
       // 重设为最近添加，假如重设数字2：1 - 2 - 3 ---> 1 - 3 - 2
       if (backgroundCache.has(pathname)) backgroundCache.delete(pathname);
+
       backgroundCache.set(pathname, instance);
-      setInstanceCache(pathname, instance, false);
+      setInstanceCache(pathname, instance, active);
     },
 
     get(pathname: string): BrowserWindow | null {
       const { backgroundCache } = ClientSubprocess;
+
       if (!backgroundCache.has(pathname)) return null;
       const instance = backgroundCache.get(pathname)!;
-      this.put(pathname, instance);
+
+      this.put(pathname, instance, true);
+
       return instance;
     },
 
@@ -94,11 +101,16 @@ class ClientSubprocess {
      * 从表的头节点依次往后删除，直到不超容量
      */
     recycle: () => {
-      const { backgroundCache, capacity, windowInstanceCache } = this;
+      const { backgroundCache, capacity, setInstanceCache } = this;
+
       while (backgroundCache.size > capacity) {
-        const { value } = backgroundCache.keys().next();
-        backgroundCache.get(value)?.close();
-        backgroundCache.delete(value);
+        const { value: pathname } = backgroundCache.keys().next();
+        const instance = backgroundCache.get(pathname)!;
+
+        instance.close();
+        backgroundCache.delete(pathname);
+
+        setInstanceCache(pathname, instance, false);
       }
     },
   };
@@ -175,7 +187,8 @@ class ClientSubprocess {
    * @param param1
    */
   private createOtherWin(_: any, { pathname, ...rest }: CreateChildArgs) {
-    this.windowCreator(pathname, rest);
+    const win = this.windowCreator(pathname, rest);
+    this.loadPage(pathname, win);
   }
 
   /**
@@ -236,10 +249,13 @@ class ClientSubprocess {
    */
   private closeWindow(
     _: any,
-    { pathname, backgroundCache, onClose }: CloseWindowArgs
+    { pathname, keepAlive, onClose }: CloseWindowArgs
   ) {
-    const { windowInstanceCache, keepAlive, setInstanceCache } =
-      ClientSubprocess;
+    const {
+      windowInstanceCache,
+      keepAlive: onKeepAlive,
+      setInstanceCache,
+    } = ClientSubprocess;
 
     if (!windowInstanceCache.has(pathname)) {
       console.error(`[ClientSubprocess] error: '${pathname}' dose not exist`);
@@ -254,10 +270,11 @@ class ClientSubprocess {
       return;
     }
 
-    // 关闭后转为后台存活
-    if (backgroundCache) {
+    // 当窗口关闭的时候执行lru，那么结果则是根据窗口关闭的先后顺序进行缓存和淘汰
+    // 只能是根据越慢关闭来预判用户当前关闭的窗口，要比之前关闭的窗口使用程度更加新
+    if (keepAlive) {
       instance.hide();
-      keepAlive.put(pathname, instance);
+      onKeepAlive.put(pathname, instance);
     } else {
       instance.close();
       setInstanceCache(pathname, instance, false);
@@ -274,8 +291,14 @@ class ClientSubprocess {
     pathname: string,
     options: BrowserWindowConstructorOptions
   ): BrowserWindow {
-    const { windowInstanceCache, setInstanceCache } = ClientSubprocess;
+    const { windowInstanceCache, setInstanceCache, keepAlive } =
+      ClientSubprocess;
 
+    // lru缓存优化
+    if (keepAlive.has(pathname)) {
+      const instance = keepAlive.get(pathname)!;
+      return instance;
+    }
     // Map缓存优化
     if (windowInstanceCache.has(pathname)) {
       const { instance } = windowInstanceCache.get(pathname)!;
@@ -300,8 +323,6 @@ class ClientSubprocess {
     });
 
     setInstanceCache(pathname, win, true);
-
-    this.loadPage(pathname, win);
 
     return win;
   }
@@ -346,17 +367,17 @@ class ClientSubprocess {
 
     const cleanup = () => {
       if (!list.size) return;
-      for (const [key, { instance, active, expired, close }] of list) {
-        if (key !== '/' && !active && expired < Date.now()) {
+      for (const [pathname, { instance, active, expired, close }] of list) {
+        if (pathname !== '/' && !active && expired < Date.now()) {
           close && instance.on('close', close);
           instance.close();
-          backgroundCache.delete(key);
-          windowInstanceCache.delete(key);
+          backgroundCache.delete(pathname);
+          windowInstanceCache.delete(pathname);
         }
       }
     };
 
-    setInterval(cleanup, 2 * 60 * 1000);
+    setInterval(cleanup, 3 * 60 * 1000);
   }
 }
 
