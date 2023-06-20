@@ -1,19 +1,17 @@
-import LazyImport from '@/components/LazyImport';
+import FriendList from '@/views/User/views/Friends';
+import GroupList from '@/views/User/views/Group';
+import MessageList from '@/views/User/views/Message';
 import { RouteObject } from 'react-router-dom';
 
 const childrenRoutes = {
   user: [
     {
-      path: 'chat',
-      element: <LazyImport comp={() => import('@/views/User/views/Chat')} />,
-    },
-    {
       path: 'message',
-      element: <LazyImport comp={() => import('@/views/User/views/Message')} />,
+      element: <MessageList />,
     },
     {
       path: 'friends',
-      element: <LazyImport comp={() => import('@/views/User/views/Friends')} />,
+      element: <FriendList />,
     },
     {
       path: 'settings',
@@ -21,7 +19,7 @@ const childrenRoutes = {
     },
     {
       path: 'group',
-      element: <LazyImport comp={() => import('@/views/User/views/Group')} />,
+      element: <GroupList />,
     },
   ] as RouteObject[],
 };

@@ -21,6 +21,7 @@ function LoginView() {
 
   const handleSaveData = useCallback(
     (data: SaveData) => {
+      // 用户数据存储到全局数据流中
       userModel.saveUser(data);
       localUser.set(data);
       localStorage.setItem('token', data.token);

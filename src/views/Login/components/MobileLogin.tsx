@@ -94,6 +94,16 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
     [handleSuccess]
   );
 
+  const handleLoginWithToken = useCallbackPlus(
+    async () => await apiHandler(() => userApi.loginWithToken(token.current)),
+    [token]
+  )
+    .before((data: UserInfo) => {
+      if (data.token) token.current = data.token;
+      setLogging(true);
+    })
+    .after(restData);
+
   const handleCreateUser = useCallbackPlus<UserInfo>(async () => {
     setRegLoading(true);
     return await apiHandler(() =>
@@ -127,22 +137,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
         return false;
       }
     })
-    .after(data =>
-      handleLoginWithToken(data.token).then(() => handleSuccess(data))
-    );
-
-  const handleLoginWithToken = useCallback(
-    async (newToken: string) => {
-      if (newToken) token.current = newToken;
-      setLogging(true);
-      const data = await apiHandler(() =>
-        userApi.loginWithToken(token.current)
-      );
-      if (!data) return;
-      restData();
-    },
-    [token, restData]
-  );
+    .after(handleLoginWithToken.invoke);
 
   return (
     <>

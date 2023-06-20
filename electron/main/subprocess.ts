@@ -54,12 +54,12 @@ const [width, height] = pkg.debug.winSize;
  * 自己的Electron客户端子进程
  */
 class ClientSubprocess {
-  private indexHtml = '';
+  static indexHtml = '';
 
   /** keepAlive最大容量 */
   static capacity = 3;
 
-  private url: string | undefined = '';
+  static url: string | undefined = '';
 
   static windowInstanceCache: WindowCache = new Map();
 
@@ -142,12 +142,22 @@ class ClientSubprocess {
   };
 
   /**
+   * 注册主线程自定义事件
+   */
+  registerListeners() {
+    for (const channel in this.ipcMainEventMap) {
+      // @ts-ignore
+      ipcMain.on(channel, this.ipcMainEventMap[channel]);
+    }
+  }
+
+  /**
    * 初始化一些配置
    * @param config
    */
   init(config: { indexHtml: string; capacity: number; url?: string }) {
-    this.url = config.url;
-    this.indexHtml = config.indexHtml;
+    ClientSubprocess.url = config.url;
+    ClientSubprocess.indexHtml = config.indexHtml;
     ClientSubprocess.capacity = config.capacity;
   }
 
@@ -156,7 +166,7 @@ class ClientSubprocess {
    * @returns BrowserWindow
    */
   createMain(pathname: string): BrowserWindow {
-    const win = this.windowCreator(pathname, {
+    const win = ClientSubprocess.windowCreator(pathname, {
       width,
       height,
       title: 'Main window',
@@ -178,7 +188,7 @@ class ClientSubprocess {
     // Apply electron-updater
     update(win);
 
-    this.loadPage(pathname, win);
+    ClientSubprocess.loadPage(pathname, win);
 
     return win;
   }
@@ -189,18 +199,8 @@ class ClientSubprocess {
    * @param param1
    */
   private createOtherWin(_: any, { pathname, ...rest }: CreateChildArgs) {
-    const win = this.windowCreator(pathname, rest);
-    this.loadPage(pathname, win);
-  }
-
-  /**
-   * 注册主线程自定义事件
-   */
-  registerListeners() {
-    for (const channel in this.ipcMainEventMap) {
-      // @ts-ignore
-      ipcMain.on(channel, this.ipcMainEventMap[channel]);
-    }
+    const win = ClientSubprocess.windowCreator(pathname, rest);
+    ClientSubprocess.loadPage(pathname, win);
   }
 
   /**最小化窗口 */
@@ -289,7 +289,7 @@ class ClientSubprocess {
    * @param options BrowserWindow配置项
    * @returns BrowserWindow
    */
-  private windowCreator(
+  static windowCreator(
     pathname: string,
     options: BrowserWindowConstructorOptions
   ): BrowserWindow {
@@ -334,8 +334,8 @@ class ClientSubprocess {
    * @param win
    * @param pathname
    */
-  private loadPage(pathname: string, win: BrowserWindow) {
-    const { url } = this;
+  static loadPage(pathname: string, win: BrowserWindow) {
+    const { url } = ClientSubprocess;
     pathname = pathname.replace('/', '');
     if (url) {
       // 改变窗口地址，顺势加载路由页面
@@ -352,10 +352,12 @@ class ClientSubprocess {
    */
   destroy() {
     const { windowInstanceCache, backgroundCache } = ClientSubprocess;
-    windowInstanceCache.forEach(({ instance, close }) => {
-      close && instance.on('close', close);
-      instance.close();
-    });
+    try {
+      windowInstanceCache.forEach(({ instance, close }) => {
+        close && instance.on('close', close);
+        instance.close();
+      });
+    } catch (error) {}
     backgroundCache.clear();
     windowInstanceCache.clear();
   }

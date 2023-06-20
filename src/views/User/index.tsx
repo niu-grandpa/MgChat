@@ -1,9 +1,8 @@
 import NavBar from '@/components/NavBar';
 import { useUserData } from '@/model';
-import { UserInfo } from '@/services/typing';
 import { Layout } from 'antd';
 import { ipcRenderer } from 'electron';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import RightOptionBar from './components/RightOptionBar';
 import './index.scss';
@@ -14,9 +13,7 @@ function UserView() {
   const { state } = useLocation() as { state: { login: boolean } };
 
   const userModel = useUserData();
-  const userData = useMemo(() => userModel.get<UserInfo>('user'), [userModel]);
-
-  const [tab, setTab] = useState(0);
+  const userData = useMemo(() => userModel.get(), [userModel]);
 
   const handleChangeShape = useCallback(() => {
     ipcRenderer.send('resize-win', {
@@ -45,11 +42,7 @@ function UserView() {
         <Outlet />
       </Sider>
       <Sider width={46} className='user-siderbar'>
-        <RightOptionBar
-          status={userData.status}
-          icon={userData.icon}
-          onChange={setTab}
-        />
+        <RightOptionBar status={userData?.status} icon={userData?.icon} />
       </Sider>
     </Layout>
   );

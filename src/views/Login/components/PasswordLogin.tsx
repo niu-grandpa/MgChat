@@ -65,11 +65,10 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   const handleLogin = useCallbackPlus<UserInfo>(
     async (values: LoginWithPwd) => {
       const { uid, password } = values;
-      const res = await apiHandler(() =>
-        userApi.loginWithPwd({ uid, password })
+      return await apiHandler(
+        () => userApi.loginWithPwd({ uid, password }),
+        () => setLogging(false)
       );
-      if (!res) setLogging(false);
-      return res;
     },
     []
   )

@@ -1,37 +1,32 @@
 import { useUserData } from '@/model';
-import { UserMessage } from '@/services/typing';
+import { UserChatLogs } from '@/services/typing';
+import { ipcRenderer } from 'electron';
 import { useCallback } from 'react';
 import MessageList from './MessageList';
 
 const data = [
   {
-    who: '8549947000',
+    uid: '8549947000',
+    friend: '8549947001',
     icon: '',
-    nickname: '测试用户1',
-    message: [
+    nickname: '测试用户2',
+    logs: [
       {
-        role: 1,
-        content: '这是一段文字描述描述描述',
+        role: 0,
+        content: '这是测试用户1的聊天内容',
         image: '',
         hidden: false,
         createTime: Date.now() - 1000 * 60 * 60 * 24,
         cid: '0000000819f85b2b270b3fe2',
         isRead: false,
       },
-    ],
-  },
-  {
-    who: '8549947001',
-    icon: '',
-    nickname: '测试用户2',
-    message: [
       {
         role: 1,
-        content: '这是一段文字描述描述描述这是一段文字描述描述描述',
+        content: '这是测试用户2给测试用户1回复的测试聊天内容',
         image: '',
         hidden: false,
         createTime: Date.now(),
-        cid: '0000000819f85b2b270b3fe21',
+        cid: '0000000819f85b2b270b3fe3',
         isRead: false,
       },
     ],
@@ -41,14 +36,16 @@ const data = [
 function MessageView() {
   const userModel = useUserData();
 
-  const handleOpenChat = useCallback((data: UserMessage) => {
-    userModel.setMsgList(data);
-    // todo打开聊天窗口
+  const handleOpenChat = useCallback((data: UserChatLogs) => {
+    ipcRenderer.send('open-win', {
+      pathname: `/chat/${data.friend}`,
+      center: true,
+    });
   }, []);
 
   return (
     <section className='msg'>
-      <MessageList itemKey='who' data={data} onItemClick={handleOpenChat} />
+      <MessageList itemKey='friend' data={data} onItemClick={handleOpenChat} />
     </section>
   );
 }

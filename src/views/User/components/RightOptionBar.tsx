@@ -14,9 +14,9 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type Props = {
-  icon: string;
-  status: UserStatus;
-  onChange: (tab: number) => void;
+  icon?: string;
+  status?: UserStatus;
+  onChange?: (tab: number) => void;
 };
 
 function OptionBar({ icon, status, onChange }: Props) {
@@ -42,7 +42,7 @@ function OptionBar({ icon, status, onChange }: Props) {
   const handleClick = useCallback(
     (idx: number) => {
       setIndex(idx);
-      onChange(idx);
+      onChange?.(idx);
       navigate(path.current[idx]);
     },
     [onChange, path]
@@ -61,7 +61,7 @@ function OptionBar({ icon, status, onChange }: Props) {
       <div>
         <Avatar size={36} />
         <Badge
-          status={statusType.current[status]}
+          status={statusType.current[status || UserStatus.ONLINE]}
           className='user-siderbar-status'
         />
       </div>

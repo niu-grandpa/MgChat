@@ -10,13 +10,10 @@
     &-nav {
       .navbar {
         height: 28px;
-        background-color: $color-light;
-        box-shadow: 0px 5px 5px -5px rgba(0, 0, 0, 0.1);
+        background-color: #3c3d3e;
+
         &-item {
           line-height: 28px;
-          .anticon {
-            color: $color-text-2;
-          }
         }
       }
     }
