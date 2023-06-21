@@ -1,10 +1,10 @@
 @import '@/assets/color.scss';
 
 .msg {
-  -webkit-app-region: no-drag;
-  user-select: none;
-
   &-list {
+    -webkit-app-region: no-drag;
+    user-select: none;
+
     .ant-list-item {
       padding: 12px;
 

@@ -49,7 +49,8 @@ type ChannelType =
 
 const preload = join(__dirname, '../preload/index.js');
 const [width, height] = pkg.debug.winSize;
-
+const windowCache: WindowCache = new Map();
+const keepAliveCache: ActiveWindowMap = new Map();
 /**
  * 自己的Electron客户端子进程
  */
@@ -61,10 +62,6 @@ class ClientSubprocess {
 
   static url: string | undefined = '';
 
-  static windowInstanceCache: WindowCache = new Map();
-
-  static backgroundCache: ActiveWindowMap = new Map();
-
   /**
    * 使用lru缓存优化控制一定数量的窗口在后台存活
    *
@@ -72,27 +69,22 @@ class ClientSubprocess {
    * 表中没访问过的元素原地站着，新来的和已存在的又被访问的都挪动位置往最后靠，
    * @returns
    */
-  static keepAlive = {
-    has: (key: string) => this.backgroundCache.has(key),
+  static lruCache = {
+    has: (key: string) => keepAliveCache.has(key),
 
     put: (pathname: string, instance: BrowserWindow, active = false) => {
-      const { backgroundCache, setInstanceCache } = this;
-
+      // 当窗口关闭的时候执行lru，那么结果则是根据窗口关闭的先后顺序进行缓存和淘汰
+      // 只能是根据越慢关闭的窗口来预判用户最近使用的频率比之前关闭的窗口使用程度更加新
       // 重设为最近添加，假如重设数字2：1 - 2 - 3 ---> 1 - 3 - 2
-      if (backgroundCache.has(pathname)) backgroundCache.delete(pathname);
-
-      backgroundCache.set(pathname, instance);
-      setInstanceCache(pathname, instance, active);
+      if (keepAliveCache.has(pathname)) keepAliveCache.delete(pathname);
+      keepAliveCache.set(pathname, instance);
+      this.setInstanceCache(pathname, instance, active);
     },
 
     get(pathname: string): BrowserWindow | null {
-      const { backgroundCache } = ClientSubprocess;
-
-      if (!backgroundCache.has(pathname)) return null;
-      const instance = backgroundCache.get(pathname)!;
-
+      if (!keepAliveCache.has(pathname)) return null;
+      const instance = keepAliveCache.get(pathname)!;
       this.put(pathname, instance, true);
-
       return instance;
     },
 
@@ -101,16 +93,11 @@ class ClientSubprocess {
      * 从表的头节点依次往后删除，直到不超容量
      */
     recycle: () => {
-      const { backgroundCache, capacity, setInstanceCache } = this;
-
-      while (backgroundCache.size > capacity) {
-        const { value: pathname } = backgroundCache.keys().next();
-        const instance = backgroundCache.get(pathname)!;
-
-        instance.close();
-        backgroundCache.delete(pathname);
-
-        setInstanceCache(pathname, instance, false);
+      const { capacity, setInstanceCache } = this;
+      while (keepAliveCache.size > capacity) {
+        const { value: pathname } = keepAliveCache.keys().next();
+        keepAliveCache.delete(pathname);
+        setInstanceCache(pathname, keepAliveCache.get(pathname)!, false);
       }
     },
   };
@@ -123,12 +110,14 @@ class ClientSubprocess {
   static setInstanceCache(
     pathname: string,
     win: BrowserWindow,
-    active: boolean
+    active: boolean,
+    onClose?: () => void
   ) {
-    ClientSubprocess.windowInstanceCache.set(pathname, {
+    windowCache.set(pathname, {
       instance: win,
       active,
       expired: Date.now() + 15 * 60 * 1000,
+      close: onClose,
     });
   }
 
@@ -200,19 +189,19 @@ class ClientSubprocess {
    */
   private createOtherWin(_: any, { pathname, ...rest }: CreateChildArgs) {
     const win = ClientSubprocess.windowCreator(pathname, rest);
-    ClientSubprocess.loadPage(pathname, win);
+    win.focus();
   }
 
   /**最小化窗口 */
   private minimizeWin(_: any, { pathname }: { pathname: string }) {
-    const { instance } = ClientSubprocess.windowInstanceCache.get(pathname)!;
-    instance.minimize();
+    const { instance } = windowCache.get(pathname)!;
+    instance.isMinimized() ? instance.restore() : instance.minimize();
   }
 
   /**最大化窗口 */
   private maximizeWin(_: any, { pathname }: { pathname: string }) {
-    const { instance } = ClientSubprocess.windowInstanceCache.get(pathname)!;
-    instance.maximize();
+    const { instance } = windowCache.get(pathname)!;
+    instance.isMaximized() ? instance.restore() : instance.maximize();
   }
 
   /**调整窗口尺寸 */
@@ -220,7 +209,7 @@ class ClientSubprocess {
     _: any,
     { pathname, width, height, resizable }: CreateChildArgs
   ) {
-    const win = ClientSubprocess.windowInstanceCache.get(pathname);
+    const win = windowCache.get(pathname);
     if (!win) return;
     const { instance } = win;
     instance.setSize(width!, height!, true);
@@ -235,7 +224,7 @@ class ClientSubprocess {
     _: any,
     { top, center, pathname, leftDelta }: AdjustWinPosArgs
   ) {
-    const win = ClientSubprocess.windowInstanceCache.get(pathname);
+    const win = windowCache.get(pathname);
     if (!win) return;
     const { instance } = win;
     if (center) {
@@ -253,18 +242,14 @@ class ClientSubprocess {
     _: any,
     { pathname, keepAlive, onClose }: CloseWindowArgs
   ) {
-    const {
-      windowInstanceCache,
-      keepAlive: onKeepAlive,
-      setInstanceCache,
-    } = ClientSubprocess;
+    const { lruCache, setInstanceCache } = ClientSubprocess;
 
-    if (!windowInstanceCache.has(pathname)) {
+    if (!windowCache.has(pathname)) {
       console.error(`[ClientSubprocess] error: '${pathname}' dose not exist`);
       return;
     }
 
-    const { instance } = windowInstanceCache.get(pathname)!;
+    const { instance } = windowCache.get(pathname)!;
 
     // 关闭主窗口，结束整个进程
     if (pathname === '/') {
@@ -272,15 +257,15 @@ class ClientSubprocess {
       return;
     }
 
-    // 当窗口关闭的时候执行lru，那么结果则是根据窗口关闭的先后顺序进行缓存和淘汰
-    // 只能是根据越慢关闭来预判用户当前关闭的窗口，要比之前关闭的窗口使用程度更加新
     if (keepAlive) {
-      instance.hide();
-      onKeepAlive.put(pathname, instance);
+      // 窗口关闭后标记为活跃，避免被自动回收
+      lruCache.put(pathname, instance);
     } else {
-      instance.close();
-      setInstanceCache(pathname, instance, false);
+      // 标记为不活跃，等待后台定时自动回收
+      setInstanceCache(pathname, instance, false, onClose);
     }
+
+    instance.hide();
   }
 
   /**
@@ -293,18 +278,19 @@ class ClientSubprocess {
     pathname: string,
     options: BrowserWindowConstructorOptions
   ): BrowserWindow {
-    const { windowInstanceCache, setInstanceCache, keepAlive } =
-      ClientSubprocess;
+    const { setInstanceCache, lruCache } = ClientSubprocess;
 
     // lru缓存优化
-    if (keepAlive.has(pathname)) {
-      const instance = keepAlive.get(pathname)!;
+    if (lruCache.has(pathname)) {
+      const instance = lruCache.get(pathname)!;
+      instance.show();
       return instance;
     }
     // Map缓存优化
-    if (windowInstanceCache.has(pathname)) {
-      const { instance } = windowInstanceCache.get(pathname)!;
+    if (windowCache.has(pathname)) {
+      const { instance } = windowCache.get(pathname)!;
       setInstanceCache(pathname, instance, true);
+      instance.show();
       return instance;
     }
 
@@ -325,6 +311,7 @@ class ClientSubprocess {
     });
 
     setInstanceCache(pathname, win, true);
+    ClientSubprocess.loadPage(pathname, win);
 
     return win;
   }
@@ -351,37 +338,36 @@ class ClientSubprocess {
    * 销毁所有窗口
    */
   destroy() {
-    const { windowInstanceCache, backgroundCache } = ClientSubprocess;
     try {
-      windowInstanceCache.forEach(({ instance, close }) => {
+      windowCache.forEach(({ instance, close }) => {
         close && instance.on('close', close);
         instance.close();
       });
     } catch (error) {}
-    backgroundCache.clear();
-    windowInstanceCache.clear();
+    keepAliveCache.clear();
+    windowCache.clear();
   }
 
   /**
-   * 定时清理缓存中长时间不活跃的窗口，防止过度占用内存
+   * 清理缓存中不活跃的窗口，防止过度占用内存。
+   * 场景：1.定时清理缓存。2.keppAlive没有达到触发回收的条件。
+   * keepAlive的重要作用之一就是刷新窗口缓存的过期时间，相当于延长回收时间，
+   * 而没有使用keepAlive则窗口关闭后虽然还缓存着，但它的过期时间在第一次关闭窗口时就已经定格
    */
   autoClearCache() {
-    const list = ClientSubprocess.windowInstanceCache;
-    const { backgroundCache, windowInstanceCache } = ClientSubprocess;
-
+    const clone = new Map([...windowCache]);
     const cleanup = () => {
-      if (!list.size) return;
-      for (const [pathname, { instance, active, expired, close }] of list) {
+      if (!clone.size) return;
+      for (const [pathname, { instance, active, expired, close }] of clone) {
+        // 只清理不活跃窗口和非主窗口
         if (pathname !== '/' && !active && expired < Date.now()) {
           close && instance.on('close', close);
           instance.close();
-          backgroundCache.delete(pathname);
-          windowInstanceCache.delete(pathname);
+          windowCache.delete(pathname);
         }
       }
     };
-
-    setInterval(cleanup, 3 * 60 * 1000);
+    setInterval(cleanup, 2 * 60 * 1000);
   }
 }
 

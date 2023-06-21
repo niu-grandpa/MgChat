@@ -1,4 +1,3 @@
-import { useUserData } from '@/model';
 import { UserChatLogs } from '@/services/typing';
 import { ipcRenderer } from 'electron';
 import { useCallback } from 'react';
@@ -6,10 +5,10 @@ import MessageList from './MessageList';
 
 const data = [
   {
-    uid: '8549947000',
-    friend: '8549947001',
+    uid: '8549947001',
+    friend: '8549947000',
     icon: '',
-    nickname: '测试用户2',
+    nickname: '管理员',
     logs: [
       {
         role: 0,
@@ -34,19 +33,12 @@ const data = [
 ];
 
 function MessageView() {
-  const userModel = useUserData();
-
   const handleOpenChat = useCallback((data: UserChatLogs) => {
-    ipcRenderer.send('open-win', {
-      pathname: `/chat/${data.friend}`,
-      center: true,
-    });
+    ipcRenderer.send('open-win', { pathname: `/chat/${data.friend}` });
   }, []);
 
   return (
-    <section className='msg'>
-      <MessageList itemKey='friend' data={data} onItemClick={handleOpenChat} />
-    </section>
+    <MessageList itemKey='friend' data={data} onItemClick={handleOpenChat} />
   );
 }
 

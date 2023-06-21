@@ -39,9 +39,9 @@ const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, 'index.html');
 let win: BrowserWindow | null = null;
 
+subprocess.init({ indexHtml, url, capacity: 4 });
 subprocess.registerListeners();
 subprocess.autoClearCache();
-subprocess.init({ indexHtml, url, capacity: 3 });
 
 const createMainWindow = () => (win = subprocess.createMain('/'));
 
