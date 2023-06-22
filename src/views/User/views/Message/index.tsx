@@ -34,7 +34,9 @@ const data = [
 
 function MessageView() {
   const handleOpenChat = useCallback((data: UserChatLogs) => {
-    ipcRenderer.send('open-win', { pathname: `/chat/${data.friend}` });
+    ipcRenderer.send('open-win', {
+      pathname: `/chat/${data.uid}/${data.friend}`,
+    });
   }, []);
 
   return (

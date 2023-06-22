@@ -1,7 +1,6 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
 import { useSleep as sleep, useLocalUsers } from '@/hooks';
-import { useUserData } from '@/model';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
 import { useCallback } from 'react';
@@ -15,18 +14,16 @@ export type SaveData = UserInfo & { auto: boolean; remember: boolean };
 const { Header, Content } = Layout;
 
 function LoginView() {
-  const localUser = useLocalUsers();
-  const userModel = useUserData();
+  const localUsers = useLocalUsers();
   const navTo = useNavigate();
 
   const handleSaveData = useCallback(
     (data: SaveData) => {
-      // 用户数据存储到全局数据流中
-      userModel.saveUser(data);
-      localUser.set(data);
-      localStorage.setItem('token', data.token);
+      localUsers.set(data);
+      // 存储当前登录用户的token，下次自动登录使用
+      localStorage.setItem('lastToken', data.token);
     },
-    [localUser, userModel]
+    [localUsers]
   );
 
   const handleLoginSuccess = useCallback(
@@ -35,7 +32,9 @@ function LoginView() {
       // 使用路由跳转而不是打开新窗口，
       // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程，
       // 因此只需要渲染路由界面和调整窗口大小位置即可。
-      sleep(2000).then(() => navTo('/user', { state: { login: true } }));
+      sleep(2000).then(() =>
+        navTo('/user', { state: { login: true, uid: data.uid } })
+      );
     },
     [handleSaveData]
   );

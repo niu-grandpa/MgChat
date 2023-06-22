@@ -1,12 +1,14 @@
 import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
+  IpcMainEvent,
   app,
   ipcMain,
   screen,
   shell,
 } from 'electron';
-import { join } from 'node:path';
+import fs from 'node:fs';
+import path, { join } from 'node:path';
 import pkg from '../../package.json';
 import { update } from './update';
 
@@ -61,6 +63,15 @@ class ClientSubprocess {
   static capacity = 3;
 
   static url: string | undefined = '';
+
+  private ipcMainEventMap: Record<ChannelType, any> = {
+    'open-win': this.createOtherWin,
+    'close-win': this.closeWindow,
+    minimize: this.minimizeWin,
+    maximize: this.maximizeWin,
+    'resize-win': this.resizeWin,
+    'adjust-win-pos': this.adjustWinPos,
+  };
 
   /**
    * 使用lru缓存优化控制一定数量的窗口在后台存活
@@ -120,15 +131,6 @@ class ClientSubprocess {
       close: onClose,
     });
   }
-
-  private ipcMainEventMap: Record<ChannelType, any> = {
-    'open-win': this.createOtherWin,
-    'close-win': this.closeWindow,
-    minimize: this.minimizeWin,
-    maximize: this.maximizeWin,
-    'resize-win': this.resizeWin,
-    'adjust-win-pos': this.adjustWinPos,
-  };
 
   /**
    * 注册主线程自定义事件
@@ -369,6 +371,62 @@ class ClientSubprocess {
     };
     setInterval(cleanup, 2 * 60 * 1000);
   }
+
+  /**
+   * 用于渲染进程提交数据到文件缓存，并写入为json类型文件
+   *
+   * 通用存储结构：
+   * ```json
+   * {
+   *   "data.fileContentKey": data.write
+   * }
+   * ```
+   * @param event
+   * @param data
+   * @param callback
+   */
+  private storeCommit(
+    event: IpcMainEvent,
+    data: {
+      write: string;
+      filename: string;
+      fileContentKey: string;
+    },
+    callback: () => void
+  ) {
+    const { write, filename, fileContentKey } = data;
+    const dataPath = app.getPath('userData');
+    // 获取用户数据目录下的文件路径
+    const filePath = path.join(dataPath, `${filename}.json`);
+    // 判断目录是否存在，如果不存在则创建目录
+    if (!fs.existsSync(dataPath)) {
+      fs.mkdirSync(dataPath, { recursive: true });
+    }
+    // 判断文件是否存在，如果不存在则创建文件并写入数据
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, '{}');
+    }
+    const fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    fileData[fileContentKey] = write;
+    fs.writeFileSync(filePath, JSON.stringify(fileData));
+    callback();
+  }
+
+  /**
+   * 拉取对应缓存文件的数据
+   * @param event
+   * @param data
+   * @param callback
+   */
+  private storePull(event: IpcMainEvent, data: {}, callback: () => void) {
+    //
+  }
+
+  /**
+   * 读取本地的聊天日志文件
+   */
+
+  private readChatLogs() {}
 }
 
 export default new ClientSubprocess();

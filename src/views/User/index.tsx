@@ -1,5 +1,5 @@
 import NavBar from '@/components/NavBar';
-import { useUserData } from '@/model';
+import { useLocalUsers } from '@/hooks';
 import { Layout } from 'antd';
 import { ipcRenderer } from 'electron';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -10,10 +10,12 @@ import './index.scss';
 const { Sider } = Layout;
 
 function UserView() {
-  const { state } = useLocation() as { state: { login: boolean } };
+  const { state } = useLocation() as {
+    state: { login: boolean; uid: string };
+  };
 
-  const userModel = useUserData();
-  const userData = useMemo(() => userModel.get(), [userModel]);
+  const localUsers = useLocalUsers();
+  const userData = useMemo(() => state && localUsers.get(state.uid), [state]);
 
   const handleChangeShape = useCallback(() => {
     ipcRenderer.send('resize-win', {

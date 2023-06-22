@@ -18,7 +18,7 @@ import {
 import { FormInstance } from 'antd/es/form';
 import { ipcRenderer } from 'electron';
 import { eq } from 'lodash-es';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
@@ -96,23 +96,25 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
     });
   }, []);
 
-  const userItems: MenuProps['items'] = localUsers
-    .list()
-    .map(({ nickname, uid, icon }) => ({
-      key: uid,
-      label: (
-        <Row align='middle' key={uid}>
-          <Col flex='50px'>
-            <Avatar size={38} {...{ icon }} />
-          </Col>
-          <Col flex='auto'>
-            <div>{nickname}</div>
-            <span style={{ color: '#a0a0a0' }}>{uid}</span>
-          </Col>
-        </Row>
-      ),
-      onClick: () => handleGetLocalUser(uid),
-    }));
+  const userItems: MenuProps['items'] = useMemo(
+    () =>
+      localUsers.list().map(({ nickname, uid, icon }) => ({
+        key: uid,
+        label: (
+          <Row align='middle' key={uid}>
+            <Col flex='50px'>
+              <Avatar size={38} {...{ icon }} />
+            </Col>
+            <Col flex='auto'>
+              <div>{nickname}</div>
+              <span style={{ color: '#a0a0a0' }}>{uid}</span>
+            </Col>
+          </Row>
+        ),
+        onClick: () => handleGetLocalUser(uid),
+      })),
+    [localUsers]
+  );
 
   return (
     <>

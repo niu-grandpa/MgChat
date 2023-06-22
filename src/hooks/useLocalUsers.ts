@@ -1,21 +1,18 @@
+import { UserInfo } from '@/services/typing';
 import { uniqBy } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
 
 export type LocalUsersType = {
-  uid: string;
-  icon: string;
-  nickname: string;
-  password: string;
   auto: boolean;
   remember: boolean;
-};
+} & UserInfo;
 
 /**
  * 从本地缓存中存取登录过的历史用户列表
  */
 export function useLocalUsers() {
   const localData = useRef<LocalUsersType[]>(
-    JSON.parse(localStorage.getItem('users') || '[]')
+    JSON.parse(localStorage.getItem('userList') || '[]')
   );
 
   const get = useCallback(
@@ -25,10 +22,9 @@ export function useLocalUsers() {
 
   const set = useCallback(
     (data: LocalUsersType) => {
-      const { uid, icon, nickname, password, auto, remember } = data;
-      localData.current.push({ uid, icon, nickname, password, auto, remember });
+      localData.current.push(data);
       localStorage.setItem(
-        'users',
+        'userList',
         JSON.stringify(uniqBy(localData.current, 'uid'))
       );
     },

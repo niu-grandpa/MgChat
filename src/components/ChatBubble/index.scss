@@ -1,0 +1,48 @@
+@import '@/assets/color.scss';
+
+.chat-bubble {
+  display: flex;
+  margin-bottom: 16px;
+  word-wrap: break-word;
+  word-break: break-all;
+
+  &.rightTop {
+    justify-content: flex-start;
+    .chat-bubble-icon {
+      margin-right: 10px;
+    }
+  }
+
+  &.leftTop {
+    justify-content: flex-end;
+    .chat-bubble-icon {
+      margin-left: 10px;
+    }
+  }
+
+  &-tooltip-rightTop,
+  &-tooltip-leftTop {
+    max-width: 220px;
+    position: relative;
+    z-index: initial;
+  }
+
+  &-tooltip-rightTop {
+    .ant-tooltip-inner {
+      color: $color-text-1;
+    }
+    .ant-tooltip-arrow:before {
+      background-color: $color-light;
+    }
+  }
+
+  &-tooltip-leftTop {
+    .ant-tooltip-arrow:before {
+      background-color: $color-primary-5;
+    }
+  }
+
+  &-icon {
+    cursor: pointer;
+  }
+}
