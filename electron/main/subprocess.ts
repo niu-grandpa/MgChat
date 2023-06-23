@@ -7,47 +7,19 @@ import {
   screen,
   shell,
 } from 'electron';
+import {
+  ActiveWindowMap,
+  AdjustWinPosArgs,
+  ChannelType,
+  CloseWindowArgs,
+  CreateChildArgs,
+  WindowCache,
+  WriteUserDataType,
+} from 'electron/types';
 import fs from 'node:fs';
 import path, { join } from 'node:path';
 import pkg from '../../package.json';
 import { update } from './update';
-
-type WindowCache = Map<
-  string,
-  {
-    instance: BrowserWindow;
-    expired: number;
-    active: boolean;
-    close?: () => void;
-  }
->;
-
-type ActiveWindowMap = Map<string, BrowserWindow>;
-
-type CreateChildArgs = {
-  pathname: string;
-} & BrowserWindowConstructorOptions;
-
-type CloseWindowArgs = {
-  pathname: string;
-  keepAlive: boolean;
-  onClose?: () => void;
-};
-
-type AdjustWinPosArgs = {
-  top: number;
-  pathname: string;
-  center: boolean;
-  leftDelta: number;
-};
-
-type ChannelType =
-  | 'open-win'
-  | 'close-win'
-  | 'resize-win'
-  | 'minimize'
-  | 'maximize'
-  | 'adjust-win-pos';
 
 const preload = join(__dirname, '../preload/index.js');
 const [width, height] = pkg.debug.winSize;
@@ -64,13 +36,15 @@ class ClientSubprocess {
 
   static url: string | undefined = '';
 
-  private ipcMainEventMap: Record<ChannelType, any> = {
-    'open-win': this.createOtherWin,
-    'close-win': this.closeWindow,
-    minimize: this.minimizeWin,
-    maximize: this.maximizeWin,
-    'resize-win': this.resizeWin,
-    'adjust-win-pos': this.adjustWinPos,
+  private ipcMainEventMap: Record<ChannelType, Function> = {
+    'open-win': this.onCreateOtherWin,
+    'close-win': this.onCloseWindow,
+    minimize: this.onMinimizeWin,
+    maximize: this.onMaximizeWin,
+    'resize-win': this.onResizeWin,
+    'adjust-win-pos': this.onAdjustWinPos,
+    'get-chat-logs': this.onGetChatLogs,
+    'post-chat-logs': this.onPostChatLogs,
   };
 
   /**
@@ -104,11 +78,12 @@ class ClientSubprocess {
      * 从表的头节点依次往后删除，直到不超容量
      */
     recycle: () => {
-      const { capacity, setInstanceCache } = this;
-      while (keepAliveCache.size > capacity) {
-        const { value: pathname } = keepAliveCache.keys().next();
-        keepAliveCache.delete(pathname);
-        setInstanceCache(pathname, keepAliveCache.get(pathname)!, false);
+      while (keepAliveCache.size > this.capacity) {
+        const { value } = keepAliveCache.keys().next();
+        const instance = keepAliveCache.get(value);
+        keepAliveCache.delete(value);
+        windowCache.delete(value);
+        instance?.close();
       }
     },
   };
@@ -189,25 +164,25 @@ class ClientSubprocess {
    * @param _
    * @param param1
    */
-  private createOtherWin(_: any, { pathname, ...rest }: CreateChildArgs) {
+  private onCreateOtherWin(_: any, { pathname, ...rest }: CreateChildArgs) {
     const win = ClientSubprocess.windowCreator(pathname, rest);
     win.focus();
   }
 
   /**最小化窗口 */
-  private minimizeWin(_: any, { pathname }: { pathname: string }) {
+  private onMinimizeWin(_: any, { pathname }: { pathname: string }) {
     const { instance } = windowCache.get(pathname)!;
     instance.isMinimized() ? instance.restore() : instance.minimize();
   }
 
   /**最大化窗口 */
-  private maximizeWin(_: any, { pathname }: { pathname: string }) {
+  private onMaximizeWin(_: any, { pathname }: { pathname: string }) {
     const { instance } = windowCache.get(pathname)!;
     instance.isMaximized() ? instance.restore() : instance.maximize();
   }
 
   /**调整窗口尺寸 */
-  private resizeWin(
+  private onResizeWin(
     _: any,
     { pathname, width, height, resizable }: CreateChildArgs
   ) {
@@ -222,7 +197,7 @@ class ClientSubprocess {
    * 调整窗口位置
    * left值由屏幕宽度减去给定的左差量
    */
-  private adjustWinPos(
+  private onAdjustWinPos(
     _: any,
     { top, center, pathname, leftDelta }: AdjustWinPosArgs
   ) {
@@ -240,7 +215,7 @@ class ClientSubprocess {
   /**
    * 关闭窗口
    */
-  private closeWindow(
+  private onCloseWindow(
     _: any,
     { pathname, keepAlive, onClose }: CloseWindowArgs
   ) {
@@ -378,23 +353,15 @@ class ClientSubprocess {
    * 通用存储结构：
    * ```json
    * {
-   *   "data.fileContentKey": data.write
+   *   "data.dataKey": [data.write]
    * }
    * ```
    * @param event
    * @param data
    * @param callback
    */
-  private storeCommit(
-    event: IpcMainEvent,
-    data: {
-      write: string;
-      filename: string;
-      fileContentKey: string;
-    },
-    callback: () => void
-  ) {
-    const { write, filename, fileContentKey } = data;
+  protected onWriteUserData(data: WriteUserDataType) {
+    const { write, filename, dataKey } = data;
     const dataPath = app.getPath('userData');
     // 获取用户数据目录下的文件路径
     const filePath = path.join(dataPath, `${filename}.json`);
@@ -406,10 +373,9 @@ class ClientSubprocess {
     if (!fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, '{}');
     }
-    const fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    fileData[fileContentKey] = write;
+    const fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8') || '[]');
+    fileData[dataKey].push(write);
     fs.writeFileSync(filePath, JSON.stringify(fileData));
-    callback();
   }
 
   /**
@@ -418,15 +384,36 @@ class ClientSubprocess {
    * @param data
    * @param callback
    */
-  private storePull(event: IpcMainEvent, data: {}, callback: () => void) {
-    //
+  protected onGetUserData(filename: string, dataKey: string) {
+    const dataPath = app.getPath('userData');
+    const filePath = path.join(dataPath, `${filename}.json`);
+    if (!fs.existsSync(dataPath) || !fs.existsSync(filePath)) return;
+    const fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8') || 'null');
+    return fileData[dataKey];
   }
 
   /**
-   * 读取本地的聊天日志文件
+   * 读取本地聊天数据
+   * @param event
+   * @param data
    */
+  private onGetChatLogs(event: IpcMainEvent, data: WriteUserDataType) {
+    data.filename = 'chat-logs';
+    event.sender.send(
+      'on-chat-logs',
+      this.onGetUserData(data.filename, data.dataKey)
+    );
+  }
 
-  private readChatLogs() {}
+  /**
+   * 提交数据到本地聊天文件
+   * @param event
+   * @param data
+   */
+  private onPostChatLogs(event: IpcMainEvent, data: WriteUserDataType) {
+    data.filename = 'chat-logs';
+    this.onWriteUserData(data);
+  }
 }
 
 export default new ClientSubprocess();

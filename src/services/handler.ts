@@ -25,18 +25,18 @@ export function apiHandler<T extends unknown>(
       }
       return data;
     } catch (error: any) {
-      // 接口调用出错，5秒内间隔500ms重发一次请求
+      // 接口调用出错，8秒内间隔1s重发一次请求
       if (reconnection) {
         let res: T | false = false;
         const timer = setInterval(() => {
           handler().then(data => (res = data));
-        }, 500);
+        }, 1000);
         // 重新调用接口成功则清除定时器，保持允许重连状态
         if (res !== false) {
           clearInterval(timer);
           return res;
         }
-        await sleep(5000);
+        await sleep(8000);
         reconnection = false;
         clearInterval(timer);
         return false;

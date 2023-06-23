@@ -55,13 +55,33 @@ export type UserChatLogs = {
   friend: string;
   icon: string;
   nickname: string;
-  logs: {
-    cid: string;
-    role: MessageRole;
-    content: string;
-    image: string;
-    hidden: boolean;
-    isRead: boolean;
-    createTime: number;
-  }[];
+  logs: ReceivedMsgData[];
+};
+
+export type SendMsgData = {
+  role: MessageRole;
+  uid: string;
+  friend: string;
+  icon: string;
+  nickname: string;
+  content?: string;
+  image?: string;
+};
+
+export type ReceivedMsgData = {
+  cid: string;
+  /**用户uid */
+  uid: string;
+  /**用户头像 */
+  icon: string;
+  /**好友uid */
+  friend: string;
+  /**用户昵称 */
+  nickname: string;
+  role: MessageRole;
+  content: string;
+  image: string;
+  hidden: boolean;
+  isRead: boolean;
+  createTime: number;
 };

@@ -26,7 +26,7 @@ export default [
     element: '',
   },
   {
-    path: '/chat/:uid/:friend',
+    path: '/chat/:data',
     element: <LazyImport comp={() => import('@/views/Chat')} />,
   },
 ] as RouteObject[];

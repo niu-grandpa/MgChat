@@ -10,7 +10,9 @@ import './index.scss';
 type Props = {
   offset: [number | string, number | string];
   size?: number;
+  /**对应窗口的路由路径 */
   pathname: string;
+  /**窗口关闭后保存存活状态 */
   keepAliveWhenClosed: boolean;
   onClose?: () => void;
 };
