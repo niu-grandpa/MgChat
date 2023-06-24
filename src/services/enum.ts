@@ -24,3 +24,11 @@ export const enum MessageRole {
   /**对方 */
   OTHER = 1,
 }
+
+/**
+ * 消息类型
+ */
+export enum MessageType {
+  FRIEND_MSG = 0,
+  GROUP_MSG = 1,
+}

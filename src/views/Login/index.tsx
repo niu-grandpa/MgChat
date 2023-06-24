@@ -1,7 +1,6 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
 import { useSleep as sleep, useLocalUsers } from '@/hooks';
-import { apiHandler, friendApi, realTimeService } from '@/services';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
 import { useCallback } from 'react';
@@ -30,14 +29,6 @@ function LoginView() {
   const handleLoginSuccess = useCallback(
     async (data: SaveData) => {
       handleSaveData(data);
-      // 加入所有好友的聊天房间
-      const res = await apiHandler(() => friendApi.list({ uid: data.uid }));
-      if (res) {
-        realTimeService.joinRoom(
-          data.uid,
-          res.list.map(item => item.uid)
-        );
-      }
       // 使用路由跳转而不是打开新窗口，
       // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程，
       // 因此只需要渲染路由界面和调整窗口大小位置即可。

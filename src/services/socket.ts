@@ -1,8 +1,34 @@
 import { io } from 'socket.io-client';
 import pkg from '../../package.json';
-import { ReceivedMsgData, SendMsgData } from './typing';
+import { ReceivedMessage, SendMessage } from './typing';
 
 const socket = io(pkg.debug.env.SERVER_URL);
+
+socket.on('connect', function () {
+  console.log('Connected to server');
+});
+
+/**
+ * 接收来自好友/群聊的消息
+ * @param received
+ */
+export const receiveMessage = (received: (data: ReceivedMessage) => void) => {
+  if (!socket.hasListeners('receive-message')) {
+    socket.on('receive-message', received);
+  }
+};
+
+/**
+ * 发送消息
+ * @param data 客户端发送的数据
+ * @param success 接收服务端处理后的数据
+ */
+export const sendMessage = (
+  data: SendMessage,
+  success: (data: ReceivedMessage) => void
+) => {
+  socket.emit('message', data).once('send-message-ok', success);
+};
 
 /**
  * @description
@@ -10,36 +36,16 @@ const socket = io(pkg.debug.env.SERVER_URL);
  * 且房间号以用户uid+好友uid组成确保号码唯一性，
  * 使得一个用户房间不会有多个好友同时存在，避免消息错误的广播。
  *
- * 房间号格式: ${uid}-${friend}
+ * 房间号格式: ${friend}-${uid}
  *
  * 实现群聊则不用上面那样。
  */
-export const joinRoom = (uid: string, friend?: string | string[]) => {
-  let room: string | string[] = '';
-  if (friend) {
-    Array.isArray(friend)
-      ? (room = friend.map(item => `${uid}-${item}`))
-      : (room = uid);
-  }
-  socket.emit('join', room);
-};
-
-/**
- * 向好友发起会话
- * @param data 客户端发送的数据
- * @param success 接收服务端处理后的数据
- */
-export const sendMsgToFriend = (
-  data: SendMsgData,
-  success: (data: ReceivedMsgData) => void
-) => {
-  socket.emit('send-msg-to-frd', data).on('send-frd-success', success);
-};
-
-/**
- * 接收来自好友的消息
- * @param received
- */
-export const receiveFriendMsg = (received: (data: ReceivedMsgData) => void) => {
-  socket.on('receive-frd-msg', received);
-};
+// export const joinRoom = (uid: string, friend?: string | string[]) => {
+//   let room: string | string[] = '';
+//   if (friend) {
+//     Array.isArray(friend)
+//       ? (room = friend.map(item => `${item}-${uid}`))
+//       : (room = uid);
+//   }
+//   socket.emit('join-frd', room);
+// };

@@ -37,7 +37,7 @@ function MessageView() {
     ipcRenderer.send('open-win', {
       pathname: `/chat/${JSON.stringify(data)}`,
       width: 560,
-      height: 480,
+      height: 500,
     });
   }, []);
 

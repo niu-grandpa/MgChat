@@ -30,7 +30,6 @@ function ChatBubble({
   onAvatarDbClick,
   onMeunItemClick,
 }: Partial<Props>) {
-  color = color || '#647dfb';
   placement = placement === 'leftTop' ? 'rightTop' : 'leftTop';
 
   const handleClick = useCallback(

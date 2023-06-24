@@ -2,8 +2,8 @@ import ActionBar from '@/components/ActionBar';
 import ChatBubble from '@/components/ChatBubble';
 import { useCallbackPlus, useLocalUsers, useOnline } from '@/hooks';
 import { realTimeService } from '@/services';
-import { MessageRole } from '@/services/enum';
-import { ReceivedMsgData, UserChatLogs } from '@/services/typing';
+import { MessageType } from '@/services/enum';
+import { ReceivedMessage, UserChatLogs } from '@/services/typing';
 import { Button, Input, Layout, Row, Tooltip, message } from 'antd';
 import { TextAreaRef } from 'antd/es/input/TextArea';
 import {
@@ -34,32 +34,42 @@ function ChatView() {
   const online = useOnline();
 
   const textArea = useRef<TextAreaRef>(null);
+  const contentArea = useRef<HTMLElement>(null);
 
   const [content, setContent] = useState('');
-  const [msgData, setMsgData] = useState<ReceivedMsgData[]>([]);
+  const [msgData, setMsgData] = useState<ReceivedMessage[]>([]);
+
+  const handleRestScrollTop = useCallback(() => {
+    setTimeout(() => {
+      const elem = contentArea.current!;
+      contentArea.current!.scrollTop = elem.scrollHeight;
+    }, 100);
+  }, [contentArea]);
 
   useEffect(() => {
     // todo 获取本地聊天日志
 
-    realTimeService.receiveFriendMsg(data => {
-      console.log(data);
-      // setMsgData(v => (v.push(data), v));
+    realTimeService.receiveMessage(data => {
+      if (data.to === uid) {
+        setMsgData(v => [...v, data]);
+        return handleRestScrollTop();
+      }
     });
   }, []);
 
-  const handleSend = useCallbackPlus(
+  const handleSendMsg = useCallbackPlus(
     (content: string) => {
-      const data = {
-        icon,
-        content,
-        nickname,
-        uid: uid!,
-        friend: friend!,
-        role: MessageRole.ME,
-      };
-      realTimeService.sendMsgToFriend(data, received => {
-        setMsgData(v => (v.push(received), v));
-      });
+      realTimeService.sendMessage(
+        {
+          icon,
+          content,
+          nickname,
+          from: uid!,
+          to: friend!,
+          type: MessageType.FRIEND_MSG,
+        },
+        data => setMsgData(v => [...v, data])
+      );
     },
     [icon, uid, friend, nickname]
   )
@@ -73,7 +83,10 @@ function ChatView() {
         return false;
       }
     })
-    .after(() => setContent(''));
+    .after(() => {
+      setContent('');
+      handleRestScrollTop();
+    });
 
   const handleKeySend = useCallback(
     (e: KeyboardEvent) => {
@@ -95,17 +108,17 @@ function ChatView() {
           setContent(elem.value);
           // enter发送
         } else if (!e.shiftKey && value) {
-          handleSend.invoke(elem.value);
+          handleSendMsg.invoke(elem.value);
         }
       }
     },
-    [textArea, handleSend]
+    [textArea, handleSendMsg]
   );
 
   const handleClickSend = useCallback(() => {
     if (!content) return;
-    handleSend.invoke(content);
-  }, [handleSend, content]);
+    handleSendMsg.invoke(content);
+  }, [handleSendMsg, content]);
 
   return (
     <Layout>
@@ -117,16 +130,20 @@ function ChatView() {
           pathname={`/chat/${data}`}
         />
       </Header>
-      <Content className='chat-content'>
-        {msgData?.map(({ cid, role, icon, content }) => (
-          <ChatBubble
-            key={cid}
-            {...{ icon, content }}
-            color={role === MessageRole.OTHER ? '#fff' : ''}
-            placement={role === MessageRole.ME ? 'rightTop' : 'leftTop'}
-          />
-        ))}
-        <Tooltip title='unnset' />
+      <Content className='chat-content' ref={contentArea}>
+        {msgData?.map(({ from, to, detail }) => {
+          const { cid, image, icon, content } = detail;
+          const fromMe = from === uid;
+          const fromFriend = to === uid;
+          return (
+            <ChatBubble
+              key={cid}
+              {...{ icon, content }}
+              color={fromMe ? '#647dfb' : '#fff'}
+              placement={fromFriend ? 'leftTop' : 'rightTop'}
+            />
+          );
+        })}
       </Content>
       <Footer className='chat-footer'>
         <Row className='chat-footer-toolbar'>111</Row>
@@ -147,6 +164,7 @@ function ChatView() {
           发送(S)
         </Button>
       </Footer>
+      <Tooltip title='unnset' />
     </Layout>
   );
 }

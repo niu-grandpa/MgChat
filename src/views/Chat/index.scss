@@ -11,14 +11,14 @@
 
   &-content,
   &-footer {
-    padding: 0 12px;
+    padding: 0 18px;
     -webkit-app-region: no-drag;
   }
 
   &-header {
     position: relative;
-    height: 48px;
-    line-height: 48px;
+    height: 42px;
+    line-height: 42px;
     padding: 0 24px;
     border-bottom: 1px solid $color-border-3;
     font-size: 18px;
@@ -27,12 +27,13 @@
   }
 
   &-content {
-    padding-top: 16px;
+    padding-top: 20px;
     height: calc(100vh - 196px);
+    overflow-y: auto;
   }
 
   &-footer {
-    height: 30vh;
+    // height: 26vh;
     border-top: 1px solid $color-border-3;
 
     &-toolbar {
@@ -45,7 +46,6 @@
 
     .ant-btn-primary {
       float: right;
-      margin-top: 6px;
     }
   }
 }

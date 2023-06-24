@@ -2,9 +2,14 @@
 
 .chat-bubble {
   display: flex;
-  margin-bottom: 16px;
+
   word-wrap: break-word;
   word-break: break-all;
+
+  .ant-tooltip-inner {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 
   &.rightTop {
     justify-content: flex-start;

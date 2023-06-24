@@ -19,7 +19,7 @@ export function apiHandler<T extends unknown>(
     try {
       const { code, msg, data } = await callback();
       if (code !== 0) {
-        message.warning(msg);
+        code !== 4 && message.warning(msg);
         error?.();
         return false;
       }

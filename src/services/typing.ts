@@ -1,4 +1,4 @@
-import { MessageRole, UserStatus } from './enum';
+import { MessageType, UserStatus } from './enum';
 
 export type ResponseData<T> = Promise<{
   code: number;
@@ -48,29 +48,29 @@ export type UserChatLogs = {
   friend: string;
   icon: string;
   nickname: string;
-  logs: ReceivedMsgData[];
+  logs: ReceivedMessage['detail'] & { hidden: boolean; read: boolean };
 };
 
-export type SendMsgData = {
-  role: MessageRole;
-  uid: string;
-  friend: string;
+export type SendMessage = {
+  from: string;
+  to: string;
   icon: string;
   nickname: string;
   content?: string;
   image?: string;
+  type: MessageType;
 };
 
-export type ReceivedMsgData = {
-  cid: string;
-  uid: string;
-  icon: string;
-  friend: string;
-  nickname: string;
-  role: MessageRole;
-  content: string;
-  image: string;
-  hidden: boolean;
-  isRead: boolean;
+export type ReceivedMessage = {
+  type: MessageType;
+  from: string;
+  to: string;
+  detail: {
+    cid: string;
+    icon: string;
+    nickname: string;
+    content: string;
+    image: string;
+  };
   createTime: number;
 };
