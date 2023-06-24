@@ -1,9 +1,9 @@
 import SECRET_KEY from '@/views/SECRET_KET';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import pkg from '../../package.json';
-import { UserGender } from './enum';
-import { ResponseData, UserInfo } from './typing';
+import pkg from '../../../package.json';
+import { UserGender } from '../enum';
+import { ResponseData, UserInfo } from '../typing';
 
 type GetUserData = {
   uid?: string;

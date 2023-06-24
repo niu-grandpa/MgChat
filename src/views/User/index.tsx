@@ -32,7 +32,9 @@ function UserView() {
   }, []);
 
   useEffect(() => {
-    if (state && state.login) handleChangeShape();
+    if (state && state.login) {
+      handleChangeShape();
+    }
   }, [state, handleChangeShape]);
 
   return (

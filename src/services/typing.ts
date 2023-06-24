@@ -21,8 +21,6 @@ export type UserInfo = {
   uid: string;
   password: string;
   phoneNumber: string;
-  friends: FriendInfo[];
-  groups: GroupInfo[];
   timeInfo: {
     loginTime: number;
     logoutTime: number;
@@ -40,14 +38,9 @@ export type GroupInfo = {
   createTime: number;
 };
 
-export type FriendInfo = {
+export type FriendList = {
   uid: string;
-  icon: string;
-  age: number;
-  status: UserStatus;
-  level: number;
-  nickname: string;
-  phoneNumber: string;
+  list: UserInfo[];
 };
 
 export type UserChatLogs = {
@@ -70,13 +63,9 @@ export type SendMsgData = {
 
 export type ReceivedMsgData = {
   cid: string;
-  /**用户uid */
   uid: string;
-  /**用户头像 */
   icon: string;
-  /**好友uid */
   friend: string;
-  /**用户昵称 */
   nickname: string;
   role: MessageRole;
   content: string;

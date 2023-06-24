@@ -6,14 +6,22 @@ const socket = io(pkg.debug.env.SERVER_URL);
 
 /**
  * @description
- * 为了实现1v1聊天就需要用户提前加入好友列表所有好友的房间，
+ * 实现1v1聊天需要用户提前加入好友列表所有好友的房间，
  * 且房间号以用户uid+好友uid组成确保号码唯一性，
  * 使得一个用户房间不会有多个好友同时存在，避免消息错误的广播。
  *
  * 房间号格式: ${uid}-${friend}
+ *
+ * 实现群聊则不用上面那样。
  */
-export const joinFriendRoom = () => {
-  //
+export const joinRoom = (uid: string, friend?: string | string[]) => {
+  let room: string | string[] = '';
+  if (friend) {
+    Array.isArray(friend)
+      ? (room = friend.map(item => `${uid}-${item}`))
+      : (room = uid);
+  }
+  socket.emit('join', room);
 };
 
 /**
