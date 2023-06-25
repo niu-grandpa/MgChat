@@ -1,6 +1,5 @@
-import SECRET_KEY from '@/views/SECRET_KET';
+import { signData } from '@/utils';
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
 import pkg from '../../../package.json';
 import { UserGender } from '../enum';
 import { ResponseData, UserInfo } from '../typing';
@@ -55,7 +54,7 @@ export const loginWithPwd = async (params: {
   uid: string;
   password: string;
 }): ResponseData<UserInfo> => {
-  params.password = jwt.sign({ password: params.password }, SECRET_KEY);
+  params.password = signData({ password: params.password }, 'password');
   const { data } = await axios.post(`${URL}/login-with-pwd`, {
     data: params,
   });

@@ -36,7 +36,7 @@ export function apiHandler<T extends unknown>(
           clearInterval(timer);
           return res;
         }
-        await sleep(8000);
+        await sleep(15000);
         reconnection = false;
         clearInterval(timer);
         return false;

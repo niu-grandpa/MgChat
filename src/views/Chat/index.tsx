@@ -39,7 +39,7 @@ function ChatView() {
   const [content, setContent] = useState('');
   const [msgData, setMsgData] = useState<ReceivedMessage[]>([]);
 
-  const handleRestScrollTop = useCallback(() => {
+  const onRestScrollTop = useCallback(() => {
     setTimeout(() => {
       const elem = contentArea.current!;
       contentArea.current!.scrollTop = elem.scrollHeight;
@@ -52,7 +52,7 @@ function ChatView() {
     realTimeService.receiveMessage(data => {
       if (data.to === uid) {
         setMsgData(v => [...v, data]);
-        return handleRestScrollTop();
+        return onRestScrollTop();
       }
     });
   }, []);
@@ -85,7 +85,7 @@ function ChatView() {
     })
     .after(() => {
       setContent('');
-      handleRestScrollTop();
+      onRestScrollTop();
     });
 
   const handleKeySend = useCallback(

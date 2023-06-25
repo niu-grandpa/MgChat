@@ -1,3 +1,4 @@
+import { verifyToken } from '@/utils';
 import { io } from 'socket.io-client';
 import pkg from '../../package.json';
 import { ReceivedMessage, SendMessage } from './typing';
@@ -14,7 +15,9 @@ socket.on('connect', function () {
  */
 export const receiveMessage = (received: (data: ReceivedMessage) => void) => {
   if (!socket.hasListeners('receive-message')) {
-    socket.on('receive-message', received);
+    socket.on('receive-message', (token: string) => {
+      verifyToken(token, received);
+    });
   }
 };
 
@@ -27,7 +30,9 @@ export const sendMessage = (
   data: SendMessage,
   success: (data: ReceivedMessage) => void
 ) => {
-  socket.emit('message', data).once('send-message-ok', success);
+  socket
+    .emit('message', data)
+    .once('send-message-ok', (token: string) => verifyToken(token, success));
 };
 
 /**
