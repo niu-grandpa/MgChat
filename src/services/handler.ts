@@ -11,7 +11,8 @@ type Result<T> = Promise<false | T>;
  */
 export function apiHandler<T extends unknown>(
   callback: () => ResponseData<T>,
-  error?: () => void
+  error?: () => void,
+  complete?: () => void
 ): Result<T> {
   let reconnection = false;
 
@@ -43,10 +44,10 @@ export function apiHandler<T extends unknown>(
       } else {
         message.error('请求失败');
         console.error('[apiHandler] error: ', error.response.data);
-        error?.();
         return false;
       }
     } finally {
+      complete?.();
       reconnection = false;
     }
   };

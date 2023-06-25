@@ -25,6 +25,11 @@ import { UserInfo } from '@/services/typing';
 import { SaveData } from '..';
 import Waitting from './Waitting';
 
+type Props = {
+  isOnline: boolean | null;
+  onSuccess: (data: SaveData) => void;
+};
+
 type LoginWithPwd = {
   uid: string;
   password: string;
@@ -32,7 +37,7 @@ type LoginWithPwd = {
 
 const { useForm, useWatch } = Form;
 
-function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
+function PasswordLogin({ isOnline, onSuccess }: Props) {
   const localUsers = useLocalUsers();
   const [form] = useForm<LocalUsersType>();
 
@@ -169,7 +174,7 @@ function PasswordLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
           </Space>
         </Form.Item>
         <Form.Item className='pwd-login-btn'>
-          <Button htmlType='submit' block type='primary'>
+          <Button htmlType='submit' block type='primary' disabled={!isOnline}>
             登录
           </Button>
         </Form.Item>

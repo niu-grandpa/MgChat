@@ -31,6 +31,11 @@ import { memo, useCallback, useRef, useState } from 'react';
 import { SaveData } from '..';
 import Waitting from './Waitting';
 
+type Props = {
+  isOnline: boolean | null;
+  onSuccess: (data: SaveData) => void;
+};
+
 type LoginWithPhone = {
   phoneNumber: string;
   code: string;
@@ -40,7 +45,7 @@ const { Title } = Typography;
 const { useForm } = Form;
 const { pwd } = getRegExp();
 
-function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
+function MobileLogin({ isOnline, onSuccess }: Props) {
   const [loginForm] = useForm<LoginWithPhone>();
   const [registerForm] = useForm<{ password: string; double: string }>();
 
@@ -95,7 +100,12 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
   );
 
   const handleLoginWithToken = useCallbackPlus(
-    async () => await apiHandler(() => userApi.loginWithToken(token.current)),
+    async () =>
+      await apiHandler(
+        () => userApi.loginWithToken(token.current),
+        () => setLogging(false),
+        () => setLogging(false)
+      ),
     [token]
   )
     .before((data: UserInfo) => {
@@ -106,13 +116,16 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
 
   const handleCreateUser = useCallbackPlus<UserInfo>(async () => {
     setRegLoading(true);
-    return await apiHandler(() =>
-      userApi.registerByPhone({
-        nickname,
-        gender,
-        ...loginForm.getFieldsValue(),
-        password: registerForm.getFieldValue('password'),
-      })
+    return await apiHandler(
+      () =>
+        userApi.registerByPhone({
+          nickname,
+          gender,
+          ...loginForm.getFieldsValue(),
+          password: registerForm.getFieldValue('password'),
+        }),
+      restData,
+      restData
     );
   }, [gender, current, nickname, registerForm, loginForm])
     .before(() => {
@@ -151,6 +164,7 @@ function MobileLogin({ onSuccess }: { onSuccess: (data: SaveData) => void }) {
             type='primary'
             htmlType='submit'
             loading={btnLoading}
+            disabled={!isOnline}
             style={{ marginTop: 10 }}>
             登录
           </Button>

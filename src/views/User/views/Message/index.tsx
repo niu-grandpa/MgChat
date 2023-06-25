@@ -1,4 +1,4 @@
-import { UserChatLogs } from '@/services/typing';
+import { MessageLogs } from '@/services/typing';
 import { ipcRenderer } from 'electron';
 import { useCallback } from 'react';
 import MessageList from './MessageList';
@@ -33,9 +33,13 @@ const data = [
 ];
 
 function MessageView() {
-  const handleOpenChat = useCallback(({ logs, ...data }: UserChatLogs) => {
+  // 1.获取所有聊天记录，本地有数据则不请求服务器。
+  // 2.监听广播消息中from或to都是自身uid的数据。
+  // 3.与好友聊天时，把自己的uid和好友uid传给聊天窗口去查询记录。
+
+  const handleOpenChat = useCallback(({ logs, ...info }: MessageLogs) => {
     ipcRenderer.send('open-win', {
-      pathname: `/chat/${JSON.stringify(data)}`,
+      pathname: `/chat/${JSON.stringify(info)}`,
       width: 560,
       height: 500,
     });

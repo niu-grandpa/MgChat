@@ -1,13 +1,16 @@
 import ActionBar from '@/components/ActionBar';
 import ChatBubble from '@/components/ChatBubble';
+import NetAlert from '@/components/NetAlert';
 import { useCallbackPlus, useLocalUsers, useOnline } from '@/hooks';
 import { realTimeService } from '@/services';
 import { MessageType } from '@/services/enum';
-import { ReceivedMessage, UserChatLogs } from '@/services/typing';
+import { MessageLogs, ReceivedMessage } from '@/services/typing';
 import { Button, Input, Layout, Row, Tooltip, message } from 'antd';
 import { TextAreaRef } from 'antd/es/input/TextArea';
+import VirtualList, { ListRef } from 'rc-virtual-list';
 import {
   KeyboardEvent,
+  forwardRef,
   useCallback,
   useEffect,
   useMemo,
@@ -20,45 +23,67 @@ import './index.scss';
 const { Header, Content, Footer } = Layout;
 
 function ChatView() {
+  const online = useOnline();
   const { data } = useParams();
+  const usrModel = useLocalUsers();
 
   const {
     uid,
     friend,
     nickname: friendName,
-  } = JSON.parse(data!) as UserChatLogs;
+  } = JSON.parse(data!) as MessageLogs;
 
-  const usrModel = useLocalUsers();
   const { icon, nickname } = useMemo(() => usrModel.get(uid!), [uid]);
 
-  const online = useOnline();
-
+  const ForwardChatBubble = forwardRef(ChatBubble);
   const textArea = useRef<TextAreaRef>(null);
   const contentArea = useRef<HTMLElement>(null);
+  const listRef = useRef<ListRef>(null);
 
   const [content, setContent] = useState('');
   const [msgData, setMsgData] = useState<ReceivedMessage[]>([]);
+  const [listHeight, setListHeight] = useState<number | undefined>();
 
-  const onRestScrollTop = useCallback(() => {
-    setTimeout(() => {
-      const elem = contentArea.current!;
-      contentArea.current!.scrollTop = elem.scrollHeight;
-    }, 100);
+  useEffect(() => {
+    setListHeight(contentArea.current?.offsetHeight);
   }, [contentArea]);
+
+  useEffect(() => {
+    const onRestListHeight = () => {
+      setListHeight(contentArea.current?.offsetHeight);
+    };
+    window.addEventListener('resize', onRestListHeight);
+    return () => {
+      window.removeEventListener('resize', onRestListHeight);
+    };
+  }, []);
+
+  const onSetListTop = useCallback(
+    (index: number) => {
+      listRef.current?.scrollTo({
+        index,
+        align: 'auto',
+      });
+    },
+    [listRef]
+  );
 
   useEffect(() => {
     // todo 获取本地聊天日志
 
+    // 监听广播消息中发给我的数据
     realTimeService.receiveMessage(data => {
       if (data.to === uid) {
         setMsgData(v => [...v, data]);
-        return onRestScrollTop();
+        onSetListTop(Number.MAX_VALUE);
+        // 存到数据库
       }
     });
   }, []);
 
   const handleSendMsg = useCallbackPlus(
     (content: string) => {
+      // 广播消息
       realTimeService.sendMessage(
         {
           icon,
@@ -68,25 +93,21 @@ function ChatView() {
           to: friend!,
           type: MessageType.FRIEND_MSG,
         },
-        data => setMsgData(v => [...v, data])
+        data => {
+          setMsgData(v => [...v, data]);
+          setContent('');
+          onSetListTop(msgData.length + 1);
+        }
       );
     },
-    [icon, uid, friend, nickname]
-  )
-    .before((content: string) => {
-      if (!online) {
-        message.warning('请检查网络后重试');
-        return false;
-      }
-      if (!content) {
-        message.info('不能发送空白消息');
-        return false;
-      }
-    })
-    .after(() => {
-      setContent('');
-      onRestScrollTop();
-    });
+    [icon, uid, friend, nickname, msgData]
+  ).before((content: string) => {
+    if (!online) return false;
+    if (!content) {
+      message.info('不能发送空白消息');
+      return false;
+    }
+  });
 
   const handleKeySend = useCallback(
     (e: KeyboardEvent) => {
@@ -131,19 +152,27 @@ function ChatView() {
         />
       </Header>
       <Content className='chat-content' ref={contentArea}>
-        {msgData?.map(({ from, to, detail }) => {
-          const { cid, image, icon, content } = detail;
-          const fromMe = from === uid;
-          const fromFriend = to === uid;
-          return (
-            <ChatBubble
-              key={cid}
-              {...{ icon, content }}
-              color={fromMe ? '#647dfb' : '#fff'}
-              placement={fromFriend ? 'leftTop' : 'rightTop'}
-            />
-          );
-        })}
+        <NetAlert />
+        <div style={{ height: 18 }} />
+        <VirtualList
+          data={msgData}
+          itemKey='cid'
+          ref={listRef}
+          itemHeight={50}
+          height={listHeight}>
+          {({ from, to, detail }) => {
+            const { image, icon, content } = detail;
+            const fromMe = from === uid;
+            const fromFriend = to === uid;
+            return (
+              <ForwardChatBubble
+                {...{ icon, content }}
+                color={fromMe ? '#647dfb' : '#fff'}
+                placement={fromFriend ? 'leftTop' : 'rightTop'}
+              />
+            );
+          }}
+        </VirtualList>
       </Content>
       <Footer className='chat-footer'>
         <Row className='chat-footer-toolbar'>111</Row>

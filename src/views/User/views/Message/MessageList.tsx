@@ -1,5 +1,5 @@
 import Avatar from '@/components/Avatar';
-import { UserChatLogs } from '@/services/typing';
+import { MessageLogs } from '@/services/typing';
 import { formatDate } from '@/utils';
 import { PushpinOutlined } from '@ant-design/icons';
 import { Badge, List } from 'antd';
@@ -9,15 +9,15 @@ import './index.scss';
 
 type Props = {
   itemKey: string;
-  data: UserChatLogs[];
-  onItemClick: (data: UserChatLogs) => void;
+  data: MessageLogs[];
+  onItemClick: (data: MessageLogs) => void;
 };
 
 function MessageList({ data, itemKey, onItemClick }: Props) {
   return (
     <List className='msg-list' size='small' split={false}>
       <VirtualList height={660 - 36} {...{ itemKey, data }}>
-        {(item: UserChatLogs) => {
+        {(item: MessageLogs) => {
           const { logs, icon, nickname } = item;
           // 每一项只需要显示最后一条消息数据
           const { content, image, createTime } = logs[logs.length - 1];

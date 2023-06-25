@@ -43,12 +43,15 @@ export type FriendList = {
   list: UserInfo[];
 };
 
-export type UserChatLogs = {
+export type MessageLogs = {
   uid: string;
   friend: string;
+  /**好友头像 */
   icon: string;
+  /**好友昵称 */
   nickname: string;
-  logs: ReceivedMessage['detail'] & { hidden: boolean; read: boolean };
+  /**与好友的聊天记录 */
+  logs: ReceivedMessage[];
 };
 
 export type SendMessage = {
@@ -65,8 +68,8 @@ export type ReceivedMessage = {
   type: MessageType;
   from: string;
   to: string;
+  cid: string;
   detail: {
-    cid: string;
     icon: string;
     nickname: string;
     content: string;

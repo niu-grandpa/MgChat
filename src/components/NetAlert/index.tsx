@@ -6,9 +6,9 @@ function NetAlert(props: AlertProps) {
   const isOnline = useOnline();
   return !isOnline ? (
     <Alert
-      type='error'
+      type='warning'
       banner
-      message='当前无网络连接，请稍后重试。'
+      message='当前无法连接网络，请检查后重试。'
       {...props}
     />
   ) : null;

@@ -1,9 +1,9 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
-import { useSleep as sleep, useLocalUsers } from '@/hooks';
+import { useSleep as sleep, useLocalUsers, useOnline } from '@/hooks';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileLogin from './components/MobileLogin';
 import PasswordLogin from './components/PasswordLogin';
@@ -14,8 +14,10 @@ export type SaveData = UserInfo & { auto: boolean; remember: boolean };
 const { Header, Content } = Layout;
 
 function LoginView() {
-  const localUsers = useLocalUsers();
   const navTo = useNavigate();
+
+  const online = useOnline();
+  const localUsers = useLocalUsers();
 
   const handleSaveData = useCallback(
     (data: SaveData) => {
@@ -38,18 +40,25 @@ function LoginView() {
     [handleSaveData]
   );
 
-  const tabItems: TabsProps['items'] = [
-    {
-      key: 'password',
-      label: `密码登录`,
-      children: <PasswordLogin onSuccess={handleLoginSuccess} />,
-    },
-    {
-      key: 'mobile',
-      label: `手机号登录`,
-      children: <MobileLogin onSuccess={handleLoginSuccess} />,
-    },
-  ];
+  const tabItems: TabsProps['items'] = useMemo(
+    () => [
+      {
+        key: 'password',
+        label: `密码登录`,
+        children: (
+          <PasswordLogin isOnline={online} onSuccess={handleLoginSuccess} />
+        ),
+      },
+      {
+        key: 'mobile',
+        label: `手机号登录`,
+        children: (
+          <MobileLogin isOnline={online} onSuccess={handleLoginSuccess} />
+        ),
+      },
+    ],
+    [online, handleLoginSuccess]
+  );
 
   return (
     <>

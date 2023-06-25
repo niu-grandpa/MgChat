@@ -15,9 +15,9 @@ socket.on('connect', function () {
  */
 export const receiveMessage = (received: (data: ReceivedMessage) => void) => {
   if (!socket.hasListeners('receive-message')) {
-    socket.on('receive-message', (token: string) => {
-      verifyToken(token, received);
-    });
+    socket.on('receive-message', (token: string) =>
+      received(verifyToken(token)!)
+    );
   }
 };
 
@@ -32,7 +32,7 @@ export const sendMessage = (
 ) => {
   socket
     .emit('message', data)
-    .once('send-message-ok', (token: string) => verifyToken(token, success));
+    .once('send-message-ok', (token: string) => success(verifyToken(token)!));
 };
 
 /**

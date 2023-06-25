@@ -1,5 +1,5 @@
 import { Dropdown, MenuProps } from 'antd';
-import { memo, useCallback } from 'react';
+import { ForwardedRef, useCallback } from 'react';
 import Avatar from '../Avatar';
 import './index.scss';
 
@@ -21,15 +21,18 @@ type Props = {
   onMeunItemClick: (key: MenuItemKeys) => void;
 };
 
-function ChatBubble({
-  icon,
-  color,
-  content,
-  placement,
-  onAvatarClick,
-  onAvatarDbClick,
-  onMeunItemClick,
-}: Partial<Props>) {
+function ChatBubble(
+  {
+    icon,
+    color,
+    content,
+    placement,
+    onAvatarClick,
+    onAvatarDbClick,
+    onMeunItemClick,
+  }: Partial<Props>,
+  ref: ForwardedRef<HTMLDivElement>
+) {
   placement = placement === 'leftTop' ? 'rightTop' : 'leftTop';
 
   const handleClick = useCallback(
@@ -74,15 +77,17 @@ function ChatBubble({
   ];
 
   return (
-    <Dropdown
-      menu={{ items }}
-      trigger={['contextMenu']}
-      overlayStyle={{ width: 90, zIndex: 99999 }}>
-      <ul className={`chat-bubble ${placement}`}>
-        {placement === 'rightTop' ? elements.reverse() : elements}
-      </ul>
-    </Dropdown>
+    <div className='chat-bubble-wrapper' ref={ref}>
+      <Dropdown
+        menu={{ items }}
+        trigger={['contextMenu']}
+        overlayStyle={{ width: 90, zIndex: 99999 }}>
+        <ul className={`chat-bubble ${placement}`}>
+          {placement === 'rightTop' ? elements.reverse() : elements}
+        </ul>
+      </Dropdown>
+    </div>
   );
 }
 
-export default memo(ChatBubble);
+export default ChatBubble;
