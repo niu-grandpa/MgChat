@@ -8,12 +8,11 @@ import {
   shell,
 } from 'electron';
 import {
-  ActiveWindowMap,
   AdjustWinPosArgs,
+  CacheMap,
   ChannelType,
   CloseWindowArgs,
   CreateChildArgs,
-  WindowCache,
   WriteUserDataType,
 } from 'electron/types';
 import fs from 'node:fs';
@@ -23,226 +22,115 @@ import { update } from './update';
 
 const preload = join(__dirname, '../preload/index.js');
 const [width, height] = pkg.debug.winSize;
-const windowCache: WindowCache = new Map();
-const keepAliveCache: ActiveWindowMap = new Map();
+
 /**
  * 自己的Electron客户端子进程
  */
-class ClientSubprocess {
-  static indexHtml = '';
+class Subprocess {
+  static cacheMap: CacheMap = new Map();
 
   /** keepAlive最大容量 */
-  static capacity = 3;
+  static capacity = 4;
+
+  static indexHtml = '';
 
   static url: string | undefined = '';
 
-  private ipcMainEventMap: Record<ChannelType, Function> = {
-    'open-win': this.onCreateOtherWin,
-    'close-win': this.onCloseWindow,
-    minimize: this.onMinimizeWin,
-    maximize: this.onMaximizeWin,
-    'resize-win': this.onResizeWin,
-    'adjust-win-pos': this.onAdjustWinPos,
-    'get-chat-logs': this.onGetChatLogs,
-    'post-chat-logs': this.onPostChatLogs,
-  };
-
   /**
-   * 使用lru缓存优化控制一定数量的窗口在后台存活
-   *
-   * 该算法直白描述就是：
-   * 表中没访问过的元素原地站着，新来的和已存在的又被访问的都挪动位置往最后靠，
-   * @returns
+   * 缓存定额的窗口数量在内存中，实现后台存活。
+   * keepAlive的作用是保证窗口能被复用而不是关闭后直接销毁，
+   * 每次关闭窗口后都会延长缓存的过期时间，而关闭窗口的次数越少，
+   * 被自动回收的可能性就越大。
    */
-  static lruCache = {
-    has: (key: string) => keepAliveCache.has(key),
-
+  static lru = {
+    has: (key: string) => this.cacheMap.has(key),
+    get: (pathname: string, active = true): BrowserWindow | null => {
+      const cache = this.cacheMap.get(pathname);
+      if (cache?.instance) {
+        // 更新缓存
+        this.lru.put(pathname, cache.instance, active);
+        return cache.instance;
+      }
+      return null;
+    },
     put: (pathname: string, instance: BrowserWindow, active = false) => {
-      // 当窗口关闭的时候执行lru，那么结果则是根据窗口关闭的先后顺序进行缓存和淘汰
-      // 只能是根据越慢关闭的窗口来预判用户最近使用的频率比之前关闭的窗口使用程度更加新
-      // 重设为最近添加，假如重设数字2：1 - 2 - 3 ---> 1 - 3 - 2
-      if (keepAliveCache.has(pathname)) keepAliveCache.delete(pathname);
-      keepAliveCache.set(pathname, instance);
-      this.setInstanceCache(pathname, instance, active);
+      const { cacheMap } = this;
+      // 执行更新
+      if (cacheMap.has(pathname)) {
+        cacheMap.delete(pathname);
+      }
+      cacheMap.set(pathname, {
+        instance,
+        active,
+        keepAlive: true,
+        expiredTime: Date.now() + 15 * 60 * 1000,
+      });
     },
-
-    get(pathname: string): BrowserWindow | null {
-      if (!keepAliveCache.has(pathname)) return null;
-      const instance = keepAliveCache.get(pathname)!;
-      this.put(pathname, instance, true);
-      return instance;
-    },
-
-    /**
-     * 内存回收
-     * 从表的头节点依次往后删除，直到不超容量
-     */
     recycle: () => {
-      while (keepAliveCache.size > this.capacity) {
-        const { value } = keepAliveCache.keys().next();
-        const instance = keepAliveCache.get(value);
-        keepAliveCache.delete(value);
-        windowCache.delete(value);
-        instance?.close();
+      const { cacheMap, capacity } = this;
+      while (cacheMap.size > capacity) {
+        // 获取哈希表第一个key进行删除
+        const { value } = cacheMap.keys().next();
+        cacheMap.get(value)!.instance.close();
+        cacheMap.delete(value);
       }
     },
   };
 
   /**
-   * 设置窗口实例缓存
-   * @param pathname 路由路径名
+   * 自动清理后台长时间不活跃的缓存，释放内存资源。
+   * 用于解决某些特定情况，例如窗口被keepAlive后由于没有达到触发回收的条件,
+   * 可能是打开的窗口过少或缓存容量较大，且长时间未使用导致它留在后台占用内存，
+   * 此时就需要将其清理掉。
+   */
+  autoClearCache() {
+    const { cacheMap } = Subprocess;
+    const cloneMap = new Map([...cacheMap]);
+    const cleanup = () => {
+      if (!cloneMap.size) return;
+      for (const [pathname, value] of cloneMap) {
+        const { instance, active, keepAlive, expiredTime } = value;
+        // 只清理已过期的不活跃窗口和非主窗口
+        if (
+          pathname !== '/' &&
+          (!keepAlive || !active) &&
+          expiredTime < Date.now()
+        ) {
+          instance.close();
+          cacheMap.delete(pathname);
+        }
+      }
+    };
+    setInterval(cleanup, 1 * 60 * 1000);
+  }
+
+  private ipcMainEventMap: Record<ChannelType, Function> = {
+    'open-win': this.createSubWindow,
+    'close-win': this.onCloseWindow,
+    minimize: this.onMinimizeWin,
+    maximize: this.onMaximizeWin,
+    'resize-win': this.onResizeWin,
+    'adjust-win-pos': this.onAdjustPos,
+    'get-chat-logs': this.onGetChatLogs,
+    'post-chat-logs': this.onPostChatLogs,
+  };
+
+  /**
+   * 通过修改窗口url地址加载页面
    * @param win
+   * @param pathname
    */
-  static setInstanceCache(
-    pathname: string,
-    win: BrowserWindow,
-    active: boolean,
-    onClose?: () => void
-  ) {
-    windowCache.set(pathname, {
-      instance: win,
-      active,
-      expired: Date.now() + 15 * 60 * 1000,
-      close: onClose,
-    });
-  }
-
-  /**
-   * 注册主线程自定义事件
-   */
-  registerListeners() {
-    for (const channel in this.ipcMainEventMap) {
-      // @ts-ignore
-      ipcMain.on(channel, this.ipcMainEventMap[channel]);
-    }
-  }
-
-  /**
-   * 初始化一些配置
-   * @param config
-   */
-  init(config: { indexHtml: string; capacity: number; url?: string }) {
-    ClientSubprocess.url = config.url;
-    ClientSubprocess.indexHtml = config.indexHtml;
-    ClientSubprocess.capacity = config.capacity;
-  }
-
-  /**
-   * 创建主窗口
-   * @returns BrowserWindow
-   */
-  createMain(pathname: string): BrowserWindow {
-    const win = ClientSubprocess.windowCreator(pathname, {
-      width,
-      height,
-      title: 'Main window',
-      resizable: false,
-      alwaysOnTop: true,
-    });
-
-    // Test actively push message to the Electron-Renderer
-    win.webContents.on('did-finish-load', () => {
-      win.webContents.send('main-process-message', new Date().toLocaleString());
-    });
-
-    // Make all links open with the browser, not with the application
-    win.webContents.setWindowOpenHandler(({ url }) => {
-      if (url.startsWith('https:')) shell.openExternal(url);
-      return { action: 'deny' };
-    });
-
-    // Apply electron-updater
-    update(win);
-
-    ClientSubprocess.loadPage(pathname, win);
-
-    return win;
-  }
-
-  /**
-   * 创建其他窗口
-   * @param _
-   * @param param1
-   */
-  private onCreateOtherWin(_: any, { pathname, ...rest }: CreateChildArgs) {
-    const win = ClientSubprocess.windowCreator(pathname, rest);
-    win.focus();
-  }
-
-  /**最小化窗口 */
-  private onMinimizeWin(_: any, { pathname }: { pathname: string }) {
-    const { instance } = windowCache.get(pathname)!;
-    instance.isMinimized() ? instance.restore() : instance.minimize();
-  }
-
-  /**最大化窗口 */
-  private onMaximizeWin(_: any, { pathname }: { pathname: string }) {
-    const { instance } = windowCache.get(pathname)!;
-    instance.isMaximized() ? instance.restore() : instance.maximize();
-  }
-
-  /**调整窗口尺寸 */
-  private onResizeWin(
-    _: any,
-    { pathname, width, height, resizable }: CreateChildArgs
-  ) {
-    const win = windowCache.get(pathname);
-    if (!win) return;
-    const { instance } = win;
-    instance.setSize(width!, height!, true);
-    if (resizable !== undefined) instance.setResizable(resizable);
-  }
-
-  /**
-   * 调整窗口位置
-   * left值由屏幕宽度减去给定的左差量
-   */
-  private onAdjustWinPos(
-    _: any,
-    { top, center, pathname, leftDelta }: AdjustWinPosArgs
-  ) {
-    const win = windowCache.get(pathname);
-    if (!win) return;
-    const { instance } = win;
-    if (center) {
-      instance.center();
-      return;
-    }
-    const { width } = screen.getPrimaryDisplay().workAreaSize;
-    instance.setPosition(width - leftDelta, top, true);
-  }
-
-  /**
-   * 关闭窗口
-   */
-  private onCloseWindow(
-    _: any,
-    { pathname, keepAlive, onClose }: CloseWindowArgs
-  ) {
-    const { lruCache, setInstanceCache } = ClientSubprocess;
-
-    if (!windowCache.has(pathname)) {
-      console.error(`[ClientSubprocess] error: '${pathname}' dose not exist`);
-      return;
-    }
-
-    const { instance } = windowCache.get(pathname)!;
-
-    // 关闭主窗口，结束整个进程
-    if (pathname === '/') {
-      app.emit('window-all-closed');
-      return;
-    }
-
-    if (keepAlive) {
-      // 窗口关闭后标记为活跃，避免被自动回收
-      lruCache.put(pathname, instance);
+  private loadPage(pathname: string, win: BrowserWindow) {
+    const { url, indexHtml } = Subprocess;
+    pathname = pathname.replace('/', '');
+    if (url) {
+      // 改变窗口地址，顺势加载路由页面
+      win.loadURL(url + pathname);
+      // Open devTool if the app is not packaged
+      win.webContents.openDevTools();
     } else {
-      // 标记为不活跃，等待后台定时自动回收
-      setInstanceCache(pathname, instance, false, onClose);
+      win.loadFile(indexHtml, pathname ? { hash: pathname } : {});
     }
-
-    instance.hide();
   }
 
   /**
@@ -251,22 +139,15 @@ class ClientSubprocess {
    * @param options BrowserWindow配置项
    * @returns BrowserWindow
    */
-  static windowCreator(
+  private createWindow(
     pathname: string,
     options: BrowserWindowConstructorOptions
   ): BrowserWindow {
-    const { setInstanceCache, lruCache } = ClientSubprocess;
+    const { lru } = Subprocess;
 
-    // lru缓存优化
-    if (lruCache.has(pathname)) {
-      const instance = lruCache.get(pathname)!;
-      instance.show();
-      return instance;
-    }
-    // Map缓存优化
-    if (windowCache.has(pathname)) {
-      const { instance } = windowCache.get(pathname)!;
-      setInstanceCache(pathname, instance, true);
+    // 缓存优化
+    if (lru.has(pathname)) {
+      const instance = lru.get(pathname)!;
       instance.show();
       return instance;
     }
@@ -287,64 +168,146 @@ class ClientSubprocess {
       },
     });
 
-    setInstanceCache(pathname, win, true);
-    ClientSubprocess.loadPage(pathname, win);
+    lru.put(pathname, win, true);
+    this.loadPage(pathname, win);
 
     return win;
   }
 
   /**
-   * 通过修改窗口url地址加载页面
-   * @param win
-   * @param pathname
+   * 注册主线程自定义事件
    */
-  static loadPage(pathname: string, win: BrowserWindow) {
-    const { url } = ClientSubprocess;
-    pathname = pathname.replace('/', '');
-    if (url) {
-      // 改变窗口地址，顺势加载路由页面
-      win.loadURL(url + pathname);
-      // Open devTool if the app is not packaged
-      win.webContents.openDevTools();
+  registerListeners() {
+    for (const channel in this.ipcMainEventMap) {
+      // @ts-ignore
+      ipcMain.on(channel, this.ipcMainEventMap[channel]);
+    }
+  }
+
+  /**
+   * 初始化一些配置
+   * @param config
+   */
+  init(config: { indexHtml: string; capacity: number; url?: string }) {
+    Subprocess.url = config.url;
+    Subprocess.indexHtml = config.indexHtml;
+    Subprocess.capacity = config.capacity;
+  }
+
+  /**
+   * 创建主窗口
+   * @returns BrowserWindow
+   */
+  createMain(pathname: string): BrowserWindow {
+    const win = this.createWindow(pathname, {
+      width,
+      height,
+      resizable: false,
+      alwaysOnTop: true,
+    });
+
+    // Test actively push message to the Electron-Renderer
+    win.webContents.on('did-finish-load', () => {
+      win.webContents.send('main-process-message', new Date().toLocaleString());
+    });
+
+    // Make all links open with the browser, not with the application
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      if (url.startsWith('https:')) shell.openExternal(url);
+      return { action: 'deny' };
+    });
+
+    // Apply electron-updater
+    update(win);
+
+    return win;
+  }
+
+  /**
+   * 创建子窗口
+   * @param _
+   * @param param1
+   */
+  private createSubWindow(_: any, { pathname, ...rest }: CreateChildArgs) {
+    const win = this.createWindow(pathname, rest);
+    win.focus();
+  }
+
+  /**
+   * 关闭窗口
+   */
+  private onCloseWindow(_: any, { pathname, keepAlive }: CloseWindowArgs) {
+    // 关闭主窗口，结束整个进程
+    if (pathname === '/') {
+      this.destroyAll();
+      app.emit('window-all-closed');
+      return;
+    }
+
+    const { lru, cacheMap } = Subprocess;
+    const { instance } = cacheMap.get(pathname)!;
+
+    if (keepAlive) {
+      lru.put(pathname, instance);
+      instance.hide();
     } else {
-      win.loadFile(this.indexHtml, pathname ? { hash: pathname } : {});
+      instance.close();
     }
   }
 
   /**
    * 销毁所有窗口
    */
-  destroy() {
-    try {
-      windowCache.forEach(({ instance, close }) => {
-        close && instance.on('close', close);
-        instance.close();
-      });
-    } catch (error) {}
-    keepAliveCache.clear();
-    windowCache.clear();
+  private destroyAll() {
+    const { cacheMap } = Subprocess;
+    const instances = Array.from(cacheMap.values());
+    while (instances.length) {
+      instances.pop()?.instance.close();
+    }
+    cacheMap.clear();
+  }
+
+  /**最小化窗口 */
+  private onMinimizeWin(_: any, { pathname }: { pathname: string }) {
+    const { instance } = Subprocess.cacheMap.get(pathname)!;
+    instance.isMinimized() ? instance.restore() : instance.minimize();
+  }
+
+  /**最大化窗口 */
+  private onMaximizeWin(_: any, { pathname }: { pathname: string }) {
+    const { instance } = Subprocess.cacheMap.get(pathname)!;
+    instance.isMaximized() ? instance.restore() : instance.maximize();
+  }
+
+  /**调整窗口尺寸 */
+  private onResizeWin(
+    _: any,
+    { pathname, width, height, resizable }: CreateChildArgs
+  ) {
+    const cache = Subprocess.cacheMap.get(pathname);
+    if (!cache) return;
+    const { instance } = cache;
+    instance.setSize(width!, height!, true);
+    if (resizable !== undefined) instance.setResizable(resizable);
   }
 
   /**
-   * 清理缓存中不活跃的窗口，防止过度占用内存。
-   * 场景：1.定时清理缓存。2.keppAlive没有达到触发回收的条件。
-   * keepAlive的重要作用之一就是刷新窗口缓存的过期时间，相当于延长回收时间，
-   * 而没有使用keepAlive则窗口关闭后虽然还缓存着，但它的过期时间在第一次关闭窗口时就已经定格
+   * 调整窗口位置
+   * left值由屏幕宽度减去给定的左差量
    */
-  autoClearCache() {
-    const clone = new Map([...windowCache]);
-    const cleanup = () => {
-      if (!clone.size) return;
-      for (const [pathname, { instance, active, expired, close }] of clone) {
-        // 只清理不活跃窗口和非主窗口
-        if (pathname !== '/' && !active && expired < Date.now()) {
-          close && instance.on('close', close);
-          instance.close();
-          windowCache.delete(pathname);
-        }
-      }
-    };
-    setInterval(cleanup, 2 * 60 * 1000);
+  private onAdjustPos(
+    _: any,
+    { top, center, pathname, leftDelta }: AdjustWinPosArgs
+  ) {
+    const cache = Subprocess.cacheMap.get(pathname);
+    if (!cache) return;
+    const { instance } = cache;
+    if (center) {
+      instance.center();
+      return;
+    }
+    const { width } = screen.getPrimaryDisplay().workAreaSize;
+    instance.setPosition(width - leftDelta, top, true);
   }
 
   /**
@@ -416,4 +379,4 @@ class ClientSubprocess {
   }
 }
 
-export default new ClientSubprocess();
+export default new Subprocess();

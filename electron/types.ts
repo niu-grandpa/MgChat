@@ -1,16 +1,14 @@
 import { BrowserWindow, BrowserWindowConstructorOptions } from 'electron';
 
-export type WindowCache = Map<
+export type CacheMap = Map<
   string,
   {
     instance: BrowserWindow;
-    expired: number;
     active: boolean;
-    close?: () => void;
+    keepAlive?: boolean;
+    expiredTime: number;
   }
 >;
-
-export type ActiveWindowMap = Map<string, BrowserWindow>;
 
 export type CreateChildArgs = {
   pathname: string;

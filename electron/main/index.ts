@@ -49,7 +49,6 @@ app.whenReady().then(createMainWindow);
 
 app.on('window-all-closed', () => {
   win = null;
-  subprocess.destroy();
   if (process.platform !== 'darwin') app.quit();
 });
 
