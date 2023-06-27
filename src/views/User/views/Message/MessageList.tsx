@@ -8,15 +8,14 @@ import { memo } from 'react';
 import './index.scss';
 
 type Props = {
-  itemKey: string;
   data: MessageLogs[];
   onItemClick: (data: MessageLogs) => void;
 };
 
-function MessageList({ data, itemKey, onItemClick }: Props) {
+function MessageList({ data, onItemClick }: Props) {
   return (
     <List className='msg-list' size='small' split={false}>
-      <VirtualList height={660 - 36} {...{ itemKey, data }}>
+      <VirtualList height={660 - 36} {...{ data }} itemKey='cid'>
         {(item: MessageLogs) => {
           const { logs, icon, nickname } = item;
           // 每一项只需要显示最后一条消息数据

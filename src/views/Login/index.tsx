@@ -1,6 +1,7 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
 import { useSleep as sleep, useLocalUsers, useOnline } from '@/hooks';
+import { useUserStore } from '@/model';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
 import { useCallback, useMemo } from 'react';
@@ -17,16 +18,15 @@ function LoginView() {
   const navTo = useNavigate();
 
   const online = useOnline();
+  const userStore = useUserStore();
   const localUsers = useLocalUsers();
 
-  const handleSaveData = useCallback(
-    (data: SaveData) => {
-      localUsers.set(data);
-      // 存储当前登录用户的token，下次自动登录使用
-      localStorage.setItem('lastToken', data.token);
-    },
-    [localUsers]
-  );
+  const handleSaveData = useCallback((data: SaveData) => {
+    localUsers.set(data);
+    userStore.setState(data);
+    // 存储当前登录用户的token，下次自动登录使用
+    localStorage.setItem('lastToken', data.token);
+  }, []);
 
   const handleLoginSuccess = useCallback(
     async (data: SaveData) => {

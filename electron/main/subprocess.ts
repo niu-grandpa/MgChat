@@ -239,7 +239,6 @@ class Subprocess {
   private onCloseWindow(_: any, { pathname, keepAlive }: CloseWindowArgs) {
     // 关闭主窗口，结束整个进程
     if (pathname === '/') {
-      this.destroyAll();
       app.emit('window-all-closed');
       return;
     }
@@ -258,7 +257,7 @@ class Subprocess {
   /**
    * 销毁所有窗口
    */
-  private destroyAll() {
+  destroyAll() {
     const { cacheMap } = Subprocess;
     const instances = Array.from(cacheMap.values());
     while (instances.length) {

@@ -51,7 +51,18 @@ export type MessageLogs = {
   /**好友昵称 */
   nickname: string;
   /**与好友的聊天记录 */
-  logs: ReceivedMessage[];
+  logs: MessageLogType[];
+};
+
+export type MessageLogType = {
+  from: string;
+  to: string;
+  cid: string;
+  image: string;
+  content: string;
+  read?: boolean;
+  hidden?: boolean;
+  createTime: number;
 };
 
 export type SendMessage = {
