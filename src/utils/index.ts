@@ -41,7 +41,7 @@ export const formatDate = (timestamp: number) => {
     : now.format('YYYY/MM/DD');
 };
 
-export const signData = (payload: any, key: 'password') => {
+export const signData = (payload: any, key?: 'password') => {
   const token = jwt.sign(
     payload,
     key === 'password' ? PWD_SECRET_KEY : SECRET_KEY

@@ -122,8 +122,10 @@ function ChatView() {
         if (e.ctrlKey) {
           const start = elem.selectionStart;
           const end = elem.selectionEnd;
-          // 插入换行符
-          elem.value = value.substring(0, start) + '\n' + value.substring(end);
+          // 换行
+          elem.value = `${value.substring(0, start)}
+          
+          ${value.substring(end)}`;
           elem.selectionStart = elem.selectionEnd = start + 1;
 
           setContent(elem.value);

@@ -3,14 +3,20 @@ import { msgApi, realTimeService } from '@/services';
 import { MessageType } from '@/services/enum';
 import { MessageLogs, ReceivedMessage } from '@/services/typing';
 import { ipcRenderer } from 'electron';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import MessageList from './MessageList';
 
 function MessageView() {
   const { userData } = useUserStore(state => ({ userData: state.data }));
+  const [logs, setLogs] = useState<MessageLogs[]>([]);
 
-  // 获取所有聊天记录，本地有数据则不请求服务器。
-  const onGetMessageLogs = useCallback(() => {}, []);
+  // 从本地缓存获取所有聊天记录
+  useEffect(() => {
+    ipcRenderer.send('request-chat-data');
+    ipcRenderer.on('get-chat-data', (...args) => {
+      console.log(args);
+    });
+  }, []);
 
   const handleBroadcast = useCallback((data: ReceivedMessage) => {
     const { type, from, to, detail, ...rest1 } = data;
@@ -46,7 +52,7 @@ function MessageView() {
     });
   }, []);
 
-  return <MessageList data={[]} onItemClick={handleOpenChat} />;
+  return <MessageList data={logs} onItemClick={handleOpenChat} />;
 }
 
 export default MessageView;

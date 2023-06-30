@@ -1,4 +1,4 @@
-import { verifyToken } from '@/utils';
+import { signData, verifyToken } from '@/utils';
 import { io } from 'socket.io-client';
 import pkg from '../../package.json';
 import { ReceivedMessage, SendMessage } from './typing';
@@ -31,7 +31,7 @@ export const sendMessage = (
   success: (data: ReceivedMessage) => void
 ) => {
   socket
-    .emit('message', data)
+    .emit('message', signData(data))
     .once('send-message-ok', (token: string) => success(verifyToken(token)!));
 };
 

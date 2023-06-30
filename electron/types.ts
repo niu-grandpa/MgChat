@@ -34,8 +34,8 @@ export type ChannelType =
   | 'minimize'
   | 'maximize'
   | 'adjust-win-pos'
-  | 'get-chat-logs'
-  | 'post-chat-logs';
+  | 'request-chat-data'
+  | 'post-chat-data';
 
 export type WriteUserDataType = {
   write: any;

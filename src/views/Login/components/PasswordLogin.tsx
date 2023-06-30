@@ -57,8 +57,13 @@ function PasswordLogin({ isOnline, onSuccess }: Props) {
     }
   }, [uid, form]);
 
+  useEffect(() => {
+    handleGetLocalUser(localUsers.list()[0].uid);
+  }, []);
+
   const handleGetLocalUser = useCallback(
     (uid: string) => {
+      if (!uid) return;
       const { icon, nickname, ...rest } = localUsers.get(uid);
       setAvatar(icon);
       setArrow(v => !v);

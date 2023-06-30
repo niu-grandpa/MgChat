@@ -15,8 +15,7 @@ import {
   CreateChildArgs,
   WriteUserDataType,
 } from 'electron/types';
-import fs from 'node:fs';
-import path, { join } from 'node:path';
+import { join } from 'node:path';
 import pkg from '../../package.json';
 import { update } from './update';
 
@@ -111,8 +110,8 @@ class Subprocess {
     maximize: this.onMaximizeWin,
     'resize-win': this.onResizeWin,
     'adjust-win-pos': this.onAdjustPos,
-    'get-chat-logs': this.onGetChatLogs,
-    'post-chat-logs': this.onPostChatLogs,
+    'request-chat-data': this.getChatData,
+    'post-chat-data': this.postChatData,
   };
 
   /**
@@ -310,72 +309,24 @@ class Subprocess {
   }
 
   /**
-   * 用于渲染进程提交数据到文件缓存，并写入为json类型文件
+   * 获取用户本地聊天数据
+   * @param event
+   * @param data
+   */
+  private getChatData(event: IpcMainEvent, data: WriteUserDataType) {}
+
+  /**
+   * 保存用户聊天数据
+   * @param event
+   * @param data
    *
-   * 通用存储结构：
-   * ```json
-   * {
-   *   "data.dataKey": [data.write]
-   * }
-   * ```
-   * @param event
-   * @param data
-   * @param callback
+   * 文件结构
+   *
+   * ├─┬ chat-data
+   * │ ├─┬ uid      > 用户所有聊天数据
+   * │   └── friend.txt    > 与某好友的聊天数据
    */
-  protected onWriteUserData(data: WriteUserDataType) {
-    const { write, filename, dataKey } = data;
-    const dataPath = app.getPath('userData');
-    // 获取用户数据目录下的文件路径
-    const filePath = path.join(dataPath, `${filename}.json`);
-    // 判断目录是否存在，如果不存在则创建目录
-    if (!fs.existsSync(dataPath)) {
-      fs.mkdirSync(dataPath, { recursive: true });
-    }
-    // 判断文件是否存在，如果不存在则创建文件并写入数据
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, '{}');
-    }
-    const fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8') || '[]');
-    fileData[dataKey].push(write);
-    fs.writeFileSync(filePath, JSON.stringify(fileData));
-  }
-
-  /**
-   * 拉取对应缓存文件的数据
-   * @param event
-   * @param data
-   * @param callback
-   */
-  protected onGetUserData(filename: string, dataKey: string) {
-    const dataPath = app.getPath('userData');
-    const filePath = path.join(dataPath, `${filename}.json`);
-    if (!fs.existsSync(dataPath) || !fs.existsSync(filePath)) return;
-    const fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8') || 'null');
-    return fileData[dataKey];
-  }
-
-  /**
-   * 读取本地聊天数据
-   * @param event
-   * @param data
-   */
-  private onGetChatLogs(event: IpcMainEvent, data: WriteUserDataType) {
-    data.filename = 'chat-logs';
-    event.sender.send(
-      'on-chat-logs',
-      this.onGetUserData(data.filename, data.dataKey)
-    );
-  }
-
-  /**
-   * 提交数据到本地聊天文件
-   * @param event
-   * @param data
-   */
-  private onPostChatLogs(event: IpcMainEvent, data: WriteUserDataType) {
-    data.filename = 'chat-logs';
-    this.onWriteUserData(data);
-  }
+  private postChatData(event: IpcMainEvent, data: WriteUserDataType) {}
 }
 
 export default new Subprocess();
