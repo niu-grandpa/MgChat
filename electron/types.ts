@@ -37,8 +37,8 @@ export type ChannelType =
   | 'request-chat-data'
   | 'post-chat-data';
 
-export type WriteUserDataType = {
-  write: any;
-  filename: string;
-  dataKey: string;
+export type PostChatData = {
+  uid: string;
+  friend: string;
+  data?: object;
 };

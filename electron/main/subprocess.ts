@@ -1,3 +1,4 @@
+import { SECRET_KEY } from 'SECRET_KET';
 import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
@@ -13,8 +14,10 @@ import {
   ChannelType,
   CloseWindowArgs,
   CreateChildArgs,
-  WriteUserDataType,
+  PostChatData,
 } from 'electron/types';
+import jwt from 'jsonwebtoken';
+import fs from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../../package.json';
 import { update } from './update';
@@ -110,7 +113,7 @@ class Subprocess {
     maximize: this.onMaximizeWin,
     'resize-win': this.onResizeWin,
     'adjust-win-pos': this.onAdjustPos,
-    'request-chat-data': this.getChatData,
+    'request-chat-data': this.getChatDataByUid,
     'post-chat-data': this.postChatData,
   };
 
@@ -309,24 +312,66 @@ class Subprocess {
   }
 
   /**
-   * 获取用户本地聊天数据
-   * @param event
-   * @param data
-   */
-  private getChatData(event: IpcMainEvent, data: WriteUserDataType) {}
-
-  /**
    * 保存用户聊天数据
    * @param event
    * @param data
    *
    * 文件结构
    *
-   * ├─┬ chat-data
-   * │ ├─┬ uid      > 用户所有聊天数据
-   * │   └── friend.txt    > 与某好友的聊天数据
+   * ├─┬ user_chat
+   * │ ├─┬ uid.txt 存放加密后的聊天数据
+   * │   ├─┬ { <friend>: [{},...] }      > 解密后的数据结构
    */
-  private postChatData(event: IpcMainEvent, data: WriteUserDataType) {}
+  private postChatData(_: any, { uid, data, friend }: PostChatData) {
+    const folderPath1 = join(__dirname, 'user_chat');
+    const filePath = join(folderPath1, `${uid}.txt`);
+
+    if (!fs.existsSync(folderPath1)) {
+      fs.mkdirSync(folderPath1, { recursive: true });
+    } else if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, '{}');
+    }
+
+    fs.readFile(filePath, 'utf-8', (err, res) => {
+      if (err) return;
+
+      const chatData =
+        res === '{}'
+          ? {}
+          : (jwt.verify(res, SECRET_KEY) as Record<string, object[]>);
+
+      if (!chatData[friend]) chatData[friend] = [];
+      chatData[friend].push(data!);
+
+      fs.writeFile(filePath, jwt.sign(chatData, SECRET_KEY), err => {});
+    });
+  }
+
+  /**
+   * 获取用户本地聊天数据
+   * @param event
+   * @param uid 通过用户uid查询
+   */
+  private getChatDataByUid(event: IpcMainEvent, uid: string) {
+    const folderPath1 = join(__dirname, 'user_chat');
+    const filePath = join(folderPath1, `${uid}.txt`);
+
+    if (!fs.existsSync(filePath)) {
+      event.sender.send('get-chat-data', { code: 404 });
+      return;
+    }
+
+    fs.readFile(filePath, 'utf-8', (err, res: string) => {
+      if (err) {
+        event.sender.send('get-chat-data', { code: 500 });
+        return;
+      }
+      jwt.verify(res, SECRET_KEY, (err, decode) => {
+        if (err) return;
+        event.sender.send('get-chat-data', { code: 200, data: decode });
+      });
+    });
+  }
 }
 
 export default new Subprocess();

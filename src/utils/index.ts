@@ -1,8 +1,8 @@
-import { PWD_SECRET_KEY, SECRET_KEY } from '@/views/SECRET_KET';
 import dayjs from 'dayjs';
 import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import jwt from 'jsonwebtoken';
+import { PWD_SECRET_KEY, SECRET_KEY } from '../../SECRET_KET';
 
 export * as type from './type';
 

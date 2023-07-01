@@ -2,7 +2,7 @@ import Avatar from '@/components/Avatar';
 import { MessageLogs } from '@/services/typing';
 import { formatDate } from '@/utils';
 import { PushpinOutlined } from '@ant-design/icons';
-import { Badge, List } from 'antd';
+import { Badge, Empty, List } from 'antd';
 import VirtualList from 'rc-virtual-list';
 import { memo } from 'react';
 import './index.scss';
@@ -13,7 +13,18 @@ type Props = {
 };
 
 function MessageList({ data, onItemClick }: Props) {
-  return (
+  return !data.length ? (
+    <Empty
+      style={{
+        position: 'absolute',
+        top: '36%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+      }}
+      description={false}
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+    />
+  ) : (
     <List className='msg-list' size='small' split={false}>
       <VirtualList height={660 - 36} {...{ data }} itemKey='cid'>
         {(item: MessageLogs) => {
