@@ -40,5 +40,7 @@ export type ChannelType =
 export type PostChatData = {
   uid: string;
   friend: string;
-  data?: object;
+  icon: string;
+  nickname: string;
+  log?: object;
 };

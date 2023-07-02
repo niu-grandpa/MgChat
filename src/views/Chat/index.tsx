@@ -4,9 +4,14 @@ import NetAlert from '@/components/NetAlert';
 import { useCallbackPlus, useLocalUsers, useOnline } from '@/hooks';
 import { realTimeService } from '@/services';
 import { MessageType } from '@/services/enum';
-import { MessageLogs, ReceivedMessage } from '@/services/typing';
+import {
+  FileMessageLogs,
+  MessageLogs,
+  ReceivedMessage,
+} from '@/services/typing';
 import { Button, Input, Layout, Row, Tooltip, message } from 'antd';
 import { TextAreaRef } from 'antd/es/input/TextArea';
+import { ipcRenderer } from 'electron';
 import VirtualList, { ListRef } from 'rc-virtual-list';
 import {
   KeyboardEvent,
@@ -23,25 +28,21 @@ import './index.scss';
 const { Header, Content, Footer } = Layout;
 
 function ChatView() {
+  const ForwardChatBubble = forwardRef(ChatBubble);
+
   const online = useOnline();
   const { data } = useParams();
   const usrModel = useLocalUsers();
 
-  const {
-    uid,
-    friend,
-    nickname: friendName,
-  } = JSON.parse(data!) as MessageLogs;
-
+  const { uid, friend, nickname: frdName } = JSON.parse(data!) as MessageLogs;
   const { icon, nickname } = useMemo(() => usrModel.get(uid!), [uid]);
 
-  const ForwardChatBubble = forwardRef(ChatBubble);
   const textArea = useRef<TextAreaRef>(null);
   const contentArea = useRef<HTMLElement>(null);
   const listRef = useRef<ListRef>(null);
 
   const [content, setContent] = useState('');
-  const [msgData, setMsgData] = useState<ReceivedMessage[]>([]);
+  const [history, setHistory] = useState<ReceivedMessage[]>([]);
   const [listHeight, setListHeight] = useState<number | undefined>();
 
   useEffect(() => {
@@ -69,21 +70,37 @@ function ChatView() {
   );
 
   useEffect(() => {
-    // todo 获取本地聊天日志
+    // 获取本地聊天日志
+    const getHistoryLogs = (_: any, data: FileMessageLogs) => {
+      if (data.code !== 200) return;
+      const { icon, nickname, logs } = data[friend];
+      const newHistory = logs.map(item => ({
+        icon,
+        nickname,
+        detail: item,
+        type: MessageType.FRIEND_MSG,
+      }));
+      setHistory(newHistory);
+    };
 
     // 监听广播消息中发给我的数据
     realTimeService.receiveMessage(data => {
-      if (data.to === uid) {
-        setMsgData(v => [...v, data]);
+      if (data.detail.to === uid) {
+        setHistory(prevMsgData => [...prevMsgData, data]);
         onSetListTop(Number.MAX_VALUE);
-        // 存到数据库
       }
     });
-  }, []);
+
+    ipcRenderer.send('request-chat-data', uid);
+    ipcRenderer.on('get-chat-data', getHistoryLogs);
+
+    return () => {
+      ipcRenderer.off('get-chat-data', getHistoryLogs);
+    };
+  }, [uid]);
 
   const handleSendMsg = useCallbackPlus(
     (content: string) => {
-      // 广播消息
       realTimeService.sendMessage(
         {
           icon,
@@ -94,13 +111,13 @@ function ChatView() {
           type: MessageType.FRIEND_MSG,
         },
         data => {
-          setMsgData(v => [...v, data]);
+          setHistory(prevMsgData => [...prevMsgData, data]);
           setContent('');
-          onSetListTop(msgData.length + 1);
+          onSetListTop(history.length + 1);
         }
       );
     },
-    [icon, uid, friend, nickname, msgData]
+    [icon, uid, friend, nickname, history]
   ).before((content: string) => {
     if (!online) return false;
     if (!content) {
@@ -111,8 +128,6 @@ function ChatView() {
 
   const handleKeySend = useCallback(
     (e: KeyboardEvent) => {
-      e.stopPropagation();
-
       if (e.key === 'Enter') {
         e.preventDefault();
 
@@ -139,14 +154,26 @@ function ChatView() {
   );
 
   const handleClickSend = useCallback(() => {
-    if (!content) return;
-    handleSendMsg.invoke(content);
+    if (content) handleSendMsg.invoke(content);
   }, [handleSendMsg, content]);
+
+  const renderItem = useCallback(({ icon, detail }: ReceivedMessage) => {
+    const { image, content, from, to } = detail;
+    const fromMe = from === uid;
+    const fromFriend = to === uid;
+    return (
+      <ForwardChatBubble
+        {...{ icon, content }}
+        color={fromMe ? '#647dfb' : '#fff'}
+        placement={fromFriend ? 'leftTop' : 'rightTop'}
+      />
+    );
+  }, []);
 
   return (
     <Layout>
       <Header className='chat-header'>
-        <span style={{ cursor: 'pointer' }}>{friendName}</span>
+        <span style={{ cursor: 'pointer' }}>{frdName}</span>
         <ActionBar
           offset={[-6, 0]}
           keepAliveWhenClosed
@@ -157,24 +184,13 @@ function ChatView() {
         <NetAlert />
         <div style={{ height: 18 }} />
         <VirtualList
-          data={msgData}
+          data={history}
           itemKey='cid'
           ref={listRef}
           itemHeight={50}
-          height={listHeight}>
-          {({ from, to, detail }) => {
-            const { image, icon, content } = detail;
-            const fromMe = from === uid;
-            const fromFriend = to === uid;
-            return (
-              <ForwardChatBubble
-                {...{ icon, content }}
-                color={fromMe ? '#647dfb' : '#fff'}
-                placement={fromFriend ? 'leftTop' : 'rightTop'}
-              />
-            );
-          }}
-        </VirtualList>
+          height={listHeight}
+          children={renderItem}
+        />
       </Content>
       <Footer className='chat-footer'>
         <Row className='chat-footer-toolbar'>111</Row>

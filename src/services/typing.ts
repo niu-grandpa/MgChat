@@ -77,14 +77,18 @@ export type SendMessage = {
 
 export type ReceivedMessage = {
   type: MessageType;
-  from: string;
-  to: string;
-  cid: string;
+  icon: string;
+  nickname: string;
   detail: {
-    icon: string;
-    nickname: string;
+    from: string;
+    to: string;
+    cid: string;
     content: string;
     image: string;
+    createTime: number;
   };
-  createTime: number;
+};
+
+export type FileMessageLogs = Record<string, MessageLogs> & {
+  code: 200 | 404 | 500;
 };

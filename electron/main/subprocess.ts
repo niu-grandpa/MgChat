@@ -320,9 +320,9 @@ class Subprocess {
    *
    * ├─┬ user_chat
    * │ ├─┬ uid.txt 存放加密后的聊天数据
-   * │   ├─┬ { <friend>: [{},...] }      > 解密后的数据结构
+   * │   ├─┬ { <friend>: {nickname: '', icon: '', logs: [{},...]} }   > 解密后的数据结构
    */
-  private postChatData(_: any, { uid, data, friend }: PostChatData) {
+  private postChatData(_: any, { uid, log, friend, ...rest }: PostChatData) {
     const folderPath1 = join(__dirname, 'user_chat');
     const filePath = join(folderPath1, `${uid}.txt`);
 
@@ -338,10 +338,21 @@ class Subprocess {
       const chatData =
         res === '{}'
           ? {}
-          : (jwt.verify(res, SECRET_KEY) as Record<string, object[]>);
+          : (jwt.verify(res, SECRET_KEY) as Record<
+              string,
+              PostChatData & { logs: object[] }
+            >);
 
-      if (!chatData[friend]) chatData[friend] = [];
-      chatData[friend].push(data!);
+      if (!chatData[friend]) {
+        chatData[friend] = {
+          uid,
+          ...rest,
+          friend,
+          logs: [],
+        };
+      }
+
+      if (log) chatData[friend].logs.push(log);
 
       fs.writeFile(filePath, jwt.sign(chatData, SECRET_KEY), err => {});
     });
