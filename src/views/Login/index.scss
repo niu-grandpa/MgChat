@@ -47,6 +47,8 @@
   }
 
   &-waitting {
+    position: fixed;
+    width: 100%;
     z-index: 9999;
     color: $color-light;
     background-color: #2980b9 !important;

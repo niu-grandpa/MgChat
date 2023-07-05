@@ -1,43 +1,71 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
-import { useSleep as sleep, useLocalUsers, useOnline } from '@/hooks';
+import { useLocalUsers, useOnline } from '@/hooks';
 import { useUserStore } from '@/model';
+import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileLogin from './components/MobileLogin';
 import PasswordLogin from './components/PasswordLogin';
+import Waitting from './components/Waitting';
 import './index.scss';
 
-export type SaveData = UserInfo & { auto: boolean; remember: boolean };
+export type SaveUserData = UserInfo & { auto: boolean; remember: boolean };
+export type LoginCommonProps = {
+  online: boolean | null;
+  cancel?: boolean;
+  onBeforeLogin: () => void;
+  onLogin: (data: SaveUserData) => void;
+  onRegisterSuccess?: () => void;
+};
 
+export const cancelTime = 3000;
 const { Header, Content } = Layout;
+const tokenKey = 'lastToken';
 
 function LoginView() {
   const navTo = useNavigate();
-
   const online = useOnline();
   const userStore = useUserStore();
   const localUsers = useLocalUsers();
 
-  const handleSaveData = useCallback((data: SaveData) => {
+  const [cancel, setCancel] = useState(false);
+  const [wait, setWait] = useState(false);
+
+  const onLogin = useCallback((data: SaveUserData) => {
     localUsers.set(data);
     userStore.setState(data);
     // 存储当前登录用户的token，下次自动登录使用
-    localStorage.setItem('lastToken', data.token);
+    data.auto && localStorage.setItem(tokenKey, data.token);
+    navTo('/user', { state: { login: true, uid: data.uid } });
   }, []);
 
-  const handleLoginSuccess = useCallback(
-    async (data: SaveData) => {
-      handleSaveData(data);
-      // 使用路由跳转而不是打开新窗口，
-      // 因为登录界面和登录后的用户界面都是主窗口，只要关闭就等于结束整个进程，
-      // 因此只需要渲染路由界面和调整窗口大小位置即可。
-      await sleep(2000);
-      navTo('/user', { state: { login: true, uid: data.uid } });
-    },
-    [handleSaveData]
+  const onAutoLogin = useCallback(() => {
+    const lastToken = localStorage.getItem(tokenKey);
+    if (!lastToken) return;
+    setWait(true);
+    const timer = setTimeout(async () => {
+      const data = await apiHandler(() => userApi.loginWithToken(lastToken));
+      if (data) onLogin({ ...data, remember: true, auto: true });
+    }, cancelTime);
+    if (cancel) {
+      setWait(false);
+      clearTimeout(timer);
+    }
+  }, [onLogin]);
+
+  useEffect(onAutoLogin, [onAutoLogin]);
+
+  const props: LoginCommonProps = useMemo(
+    () => ({
+      online,
+      cancel,
+      onLogin,
+      onBeforeLogin: () => setWait(true),
+    }),
+    [online, cancel, onLogin]
   );
 
   const tabItems: TabsProps['items'] = useMemo(
@@ -45,20 +73,22 @@ function LoginView() {
       {
         key: 'password',
         label: `密码登录`,
-        children: (
-          <PasswordLogin isOnline={online} onSuccess={handleLoginSuccess} />
-        ),
+        children: <PasswordLogin {...props} />,
       },
       {
         key: 'mobile',
         label: `手机号登录`,
-        children: (
-          <MobileLogin isOnline={online} onSuccess={handleLoginSuccess} />
-        ),
+        children: <MobileLogin {...props} onRegisterSuccess={onAutoLogin} />,
       },
     ],
-    [online, handleLoginSuccess]
+    [props, onAutoLogin]
   );
+
+  const handleCancel = useCallback(() => {
+    setWait(false);
+    setCancel(true);
+    Promise.resolve().then(() => setCancel(false));
+  }, []);
 
   return (
     <>
@@ -77,6 +107,7 @@ function LoginView() {
           />
         </Content>
       </Layout>
+      <Waitting open={wait} onCancel={handleCancel} />
     </>
   );
 }

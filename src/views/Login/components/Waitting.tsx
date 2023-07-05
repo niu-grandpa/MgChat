@@ -1,6 +1,6 @@
-import { Drawer, DrawerProps } from 'antd';
+import { Button, Drawer, DrawerProps } from 'antd';
 
-function Waitting(props: DrawerProps) {
+function Waitting(props: DrawerProps & { onCancel: () => void }) {
   return (
     <Drawer className='login-waitting' {...props} closable={false} width='100%'>
       <section className='login-waitting-preview'>
@@ -13,6 +13,9 @@ function Waitting(props: DrawerProps) {
           <div className='sk-chase-dot' />
         </div>
         <p style={{ margin: 24 }}>正在登陆中...</p>
+        <Button ghost onClick={props.onCancel}>
+          取消登录
+        </Button>
       </section>
     </Drawer>
   );

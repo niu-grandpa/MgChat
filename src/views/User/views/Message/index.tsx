@@ -1,5 +1,5 @@
 import { useUserStore } from '@/model';
-import { msgApi, realTimeService } from '@/services';
+import { realTimeService } from '@/services';
 import { MessageType } from '@/services/enum';
 import {
   FileMessageLogs,
@@ -74,12 +74,11 @@ function MessageView() {
   const onCachedMessages = useCallback(
     throttle(() => {
       buffer.forEach(item => {
-        // 服务器存储
-        msgApi.save(item);
+        // 服务器存储 vip
+        // msgApi.save(item);
         // 本地存储
         ipcRenderer.send('post-chat-data', item);
       });
-      setBuffer([]);
     }, 1000),
     []
   );

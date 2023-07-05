@@ -22,13 +22,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
-import { SaveData } from '..';
-import Waitting from './Waitting';
-
-type Props = {
-  isOnline: boolean | null;
-  onSuccess: (data: SaveData) => void;
-};
+import { LoginCommonProps, cancelTime } from '..';
 
 type LoginWithPwd = {
   uid: string;
@@ -37,13 +31,17 @@ type LoginWithPwd = {
 
 const { useForm, useWatch } = Form;
 
-function PasswordLogin({ isOnline, onSuccess }: Props) {
+function PasswordLogin({
+  online,
+  cancel,
+  onLogin,
+  onBeforeLogin,
+}: LoginCommonProps) {
   const localUsers = useLocalUsers();
   const [form] = useForm<LocalUsersType>();
 
   const [arrow, setArrow] = useState(false);
   const [avatar, setAvatar] = useState('');
-  const [logging, setLogging] = useState(false);
 
   const uid: string = useWatch('uid', form as FormInstance);
   useEffect(() => {
@@ -58,7 +56,7 @@ function PasswordLogin({ isOnline, onSuccess }: Props) {
   }, [uid, form]);
 
   useEffect(() => {
-    handleGetLocalUser(localUsers.list()[0].uid);
+    handleGetLocalUser(localUsers.list()[0]?.uid);
   }, []);
 
   const handleGetLocalUser = useCallback(
@@ -74,37 +72,35 @@ function PasswordLogin({ isOnline, onSuccess }: Props) {
 
   const handleLogin = useCallbackPlus<UserInfo>(
     async (values: LoginWithPwd) => {
-      const { uid, password } = values;
-      return await apiHandler(
-        () => userApi.loginWithPwd({ uid, password }),
-        () => setLogging(false)
-      );
+      onBeforeLogin();
+      const timer = setTimeout(async () => {
+        const { uid, password } = values;
+        const data = await apiHandler(() =>
+          userApi.loginWithPwd({ uid, password })
+        );
+        onLogin({ ...data, ...form.getFieldsValue() });
+      }, cancelTime);
+      if (cancel) clearTimeout(timer);
     },
-    []
-  )
-    .before(() => {
-      // 检查账号密码
-      const { uid, password } = form.getFieldsValue();
-      if (!uid || uid.length < 9) {
-        message.error('请输入正确的账号');
-        return false;
-      }
-      if (!password) {
-        message.error('请输入您的密码');
-        return false;
-      }
-      setLogging(true);
-    })
-    .after(data => onSuccess({ ...data, ...form.getFieldsValue() }));
+    [cancel, onLogin, onBeforeLogin]
+  ).before(() => {
+    const { uid, password } = form.getFieldsValue();
+    if (!uid || uid.length < 9) {
+      message.error('请正确输入账号');
+      return false;
+    }
+    if (!password) {
+      message.error('请输入您的密码');
+      return false;
+    }
+  });
 
   const handleForget = useCallback(() => {
     const uid = form.getFieldValue('uid');
     ipcRenderer.send('open-win', {
-      key: 'forget',
-      title: '找回密码',
-      search: !uid ? '' : `?uid=${uid}`,
+      pathname: '/forget' + !uid ? '' : `?uid=${uid}`,
     });
-  }, []);
+  }, [form]);
 
   const userItems: MenuProps['items'] = useMemo(
     () =>
@@ -128,7 +124,6 @@ function PasswordLogin({ isOnline, onSuccess }: Props) {
 
   return (
     <>
-      <Waitting open={logging} />
       <Avatar icon={avatar} size={56} className='login-avatar' />
       <Form
         form={form}
@@ -179,7 +174,7 @@ function PasswordLogin({ isOnline, onSuccess }: Props) {
           </Space>
         </Form.Item>
         <Form.Item className='pwd-login-btn'>
-          <Button htmlType='submit' block type='primary' disabled={!isOnline}>
+          <Button htmlType='submit' block type='primary' disabled={!online}>
             登录
           </Button>
         </Form.Item>

@@ -28,13 +28,7 @@ import {
 import { CarouselRef } from 'antd/es/carousel';
 import { eq } from 'lodash-es';
 import { memo, useCallback, useRef, useState } from 'react';
-import { SaveData } from '..';
-import Waitting from './Waitting';
-
-type Props = {
-  isOnline: boolean | null;
-  onSuccess: (data: SaveData) => void;
-};
+import { LoginCommonProps, cancelTime } from '..';
 
 type LoginWithPhone = {
   phoneNumber: string;
@@ -45,16 +39,20 @@ const { Title } = Typography;
 const { useForm } = Form;
 const { pwd } = getRegExp();
 
-function MobileLogin({ isOnline, onSuccess }: Props) {
+function MobileLogin({
+  online,
+  cancel,
+  onLogin,
+  onBeforeLogin,
+  onRegisterSuccess,
+}: LoginCommonProps) {
   const [loginForm] = useForm<LoginWithPhone>();
   const [registerForm] = useForm<{ password: string; double: string }>();
 
   const carousel = useRef<CarouselRef>(null);
-  const token = useRef(localStorage.getItem('token') || '');
 
   const [openReg, setOpenReg] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
-  const [logging, setLogging] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
   const [current, setCurrent] = useState(0);
   const [gender, setGender] = useState(-1);
@@ -70,53 +68,34 @@ function MobileLogin({ isOnline, onSuccess }: Props) {
     registerForm.setFieldsValue({ password: undefined, double: undefined });
   }, []);
 
-  const handleSuccess = useCallback(
-    (data: UserInfo) => {
-      restData();
-      onSuccess({ ...data, remember: true, auto: true });
-    },
-    [restData, onSuccess]
-  );
-
-  const handleLogin = useCallback(
-    async (values: LoginWithPhone) => {
-      setLogging(true);
-      setBtnLoading(true);
-
-      const res = await apiHandler(() => userApi.loginWithMobile(values));
-
-      // 如果未查询到用户信息则要么注册要么不登录
-      if (!res) {
-        setLogging(false);
+  const handleLogin = useCallbackPlus(
+    (values: LoginWithPhone) => {
+      const timer = setTimeout(async () => {
+        const data = await apiHandler(() => userApi.loginWithMobile(values));
+        // 如果未查询到用户信息则要么注册要么不登录
+        if (!data) {
+          // 转入注册流程，如果注册成功使用token登录
+          setOpenReg(true);
+          setBtnLoading(false);
+        } else {
+          restData();
+          onLogin({ ...data, remember: true, auto: true });
+        }
+      }, cancelTime);
+      if (cancel) {
+        clearTimeout(timer);
         setBtnLoading(false);
-        // 转入注册流程，如果注册成功使用token登录
-        setOpenReg(true);
-        return;
       }
-
-      handleSuccess(res);
     },
-    [handleSuccess]
-  );
+    [cancel, restData, onLogin]
+  ).before(() => {
+    onBeforeLogin();
+    setBtnLoading(true);
+  });
 
-  const handleLoginWithToken = useCallbackPlus(
-    async () =>
-      await apiHandler(
-        () => userApi.loginWithToken(token.current),
-        () => setLogging(false),
-        () => setLogging(false)
-      ),
-    [token]
-  )
-    .before((data: UserInfo) => {
-      if (data.token) token.current = data.token;
-      setLogging(true);
-    })
-    .after(restData);
-
-  const handleCreateUser = useCallbackPlus<UserInfo>(async () => {
+  const onRegister = useCallbackPlus<UserInfo>(async () => {
     setRegLoading(true);
-    return await apiHandler(
+    const res = await apiHandler(
       () =>
         userApi.registerByPhone({
           nickname,
@@ -127,36 +106,35 @@ function MobileLogin({ isOnline, onSuccess }: Props) {
       restData,
       restData
     );
-  }, [gender, current, nickname, registerForm, loginForm])
-    .before(() => {
-      if (eq(gender, -1)) {
-        message.error('请选择您的性别');
-        return false;
-      }
-      if (eq(current, 1) && eq(nickname.length, 0)) {
-        message.error('昵称是必填项');
-        return false;
-      }
-      const { password, double } = registerForm.getFieldsValue();
-      if (
-        (eq(current, 2) && (!password || !pwd.test(password))) ||
-        !eq(double, password)
-      ) {
-        message.error('请正确填写您的密码');
-        return false;
-      }
-      if (current < 2) {
-        carousel.current?.next();
-        return false;
-      }
-    })
-    .after(handleLoginWithToken.invoke);
+    res && onRegisterSuccess?.();
+  }, [gender, nickname, onRegisterSuccess]).before(() => {
+    if (eq(gender, -1)) {
+      message.error('请选择您的性别');
+      return false;
+    }
+    if (eq(current, 1) && eq(nickname.length, 0)) {
+      message.error('昵称是必填项');
+      return false;
+    }
+    const { password, double } = registerForm.getFieldsValue();
+    if (
+      (eq(current, 2) && (!password || !pwd.test(password))) ||
+      !eq(double, password)
+    ) {
+      message.error('请正确填写您的密码');
+      return false;
+    }
+    if (current < 2) {
+      carousel.current?.next();
+      return false;
+    }
+  });
 
   return (
     <>
       <Avatar size={56} className='login-avatar' />
       {/* 登录框 */}
-      <Form form={loginForm} onFinish={handleLogin}>
+      <Form form={loginForm} onFinish={handleLogin.invoke}>
         <PhoneLoginInput />
         <Form.Item>
           <Button
@@ -164,14 +142,12 @@ function MobileLogin({ isOnline, onSuccess }: Props) {
             type='primary'
             htmlType='submit'
             loading={btnLoading}
-            disabled={!isOnline}
+            disabled={!online}
             style={{ marginTop: 10 }}>
             登录
           </Button>
         </Form.Item>
       </Form>
-      {/* 登录等待 */}
-      <Waitting open={logging} />
       {/* 注册 */}
       <Drawer
         {...{ openReg }}
@@ -248,7 +224,7 @@ function MobileLogin({ isOnline, onSuccess }: Props) {
               shape='circle'
               size='large'
               icon={<ArrowRightOutlined />}
-              onClick={handleCreateUser.invoke}
+              onClick={onRegister.invoke}
             />
           </div>
         </Spin>
