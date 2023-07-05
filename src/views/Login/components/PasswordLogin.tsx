@@ -78,7 +78,7 @@ function PasswordLogin({
         const data = await apiHandler(() =>
           userApi.loginWithPwd({ uid, password })
         );
-        onLogin({ ...data, ...form.getFieldsValue() });
+        onLogin(data ? { ...data, ...form.getFieldsValue() } : 'failed');
       }, cancelTime);
       if (cancel) clearTimeout(timer);
     },

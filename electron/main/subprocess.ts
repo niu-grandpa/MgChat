@@ -1,4 +1,3 @@
-import { SECRET_KEY } from 'SECRET_KET';
 import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
@@ -16,11 +15,11 @@ import {
   CreateChildArgs,
   PostChatData,
 } from 'electron/types';
-import jwt from 'jsonwebtoken';
 import fs from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../../package.json';
 import { update } from './update';
+import { decrypt, encrypt } from './utils';
 
 const preload = join(__dirname, '../preload/index.js');
 const [width, height] = pkg.debug.winSize;
@@ -240,7 +239,7 @@ class Subprocess {
    */
   private onCloseWindow(_: any, { pathname, keepAlive }: CloseWindowArgs) {
     // 关闭主窗口，结束整个进程
-    if (pathname === '/') {
+    if (pathname === '/' || pathname === '/user') {
       app.emit('window-all-closed');
       return;
     }
@@ -331,18 +330,12 @@ class Subprocess {
     } else if (!fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, '{}');
     }
-
     fs.readFile(filePath, 'utf-8', (err, res) => {
       if (err) return;
-
       const chatData =
         res === '{}'
           ? {}
-          : (jwt.verify(res, SECRET_KEY) as Record<
-              string,
-              PostChatData & { logs: object[] }
-            >);
-
+          : (decrypt(res) as Record<string, PostChatData & { logs: object[] }>);
       if (!chatData[friend]) {
         chatData[friend] = {
           uid,
@@ -351,10 +344,8 @@ class Subprocess {
           logs: [],
         };
       }
-
       if (log) chatData[friend].logs.push(log);
-
-      fs.writeFile(filePath, jwt.sign(chatData, SECRET_KEY), err => {});
+      fs.writeFile(filePath, encrypt(chatData), err => {});
     });
   }
 
@@ -377,10 +368,10 @@ class Subprocess {
         event.sender.send('get-chat-data', { code: 500 });
         return;
       }
-      jwt.verify(res, SECRET_KEY, (err, decode) => {
-        if (err) return;
-        event.sender.send('get-chat-data', { code: 200, data: decode });
-      });
+      const decryptData = decrypt(res);
+      if (decryptData !== null) {
+        event.sender.send('get-chat-data', { code: 200, data: decryptData });
+      }
     });
   }
 }

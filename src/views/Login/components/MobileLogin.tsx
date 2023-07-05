@@ -79,7 +79,7 @@ function MobileLogin({
           setBtnLoading(false);
         } else {
           restData();
-          onLogin({ ...data, remember: true, auto: true });
+          onLogin(data ? { ...data, remember: true, auto: true } : 'failed');
         }
       }, cancelTime);
       if (cancel) {

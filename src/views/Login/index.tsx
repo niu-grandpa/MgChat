@@ -17,7 +17,7 @@ export type LoginCommonProps = {
   online: boolean | null;
   cancel?: boolean;
   onBeforeLogin: () => void;
-  onLogin: (data: SaveUserData) => void;
+  onLogin: (data: SaveUserData | 'failed') => void;
   onRegisterSuccess?: () => void;
 };
 
@@ -34,7 +34,11 @@ function LoginView() {
   const [cancel, setCancel] = useState(false);
   const [wait, setWait] = useState(false);
 
-  const onLogin = useCallback((data: SaveUserData) => {
+  const onLogin = useCallback((data: SaveUserData | 'failed') => {
+    if (data === 'failed') {
+      setWait(false);
+      return;
+    }
     localUsers.set(data);
     userStore.setState(data);
     // 存储当前登录用户的token，下次自动登录使用
@@ -48,7 +52,12 @@ function LoginView() {
     setWait(true);
     const timer = setTimeout(async () => {
       const data = await apiHandler(() => userApi.loginWithToken(lastToken));
-      if (data) onLogin({ ...data, remember: true, auto: true });
+      if (data) {
+        onLogin({ ...data, remember: true, auto: true });
+      } else {
+        setWait(false);
+        clearTimeout(timer);
+      }
     }, cancelTime);
     if (cancel) {
       setWait(false);
