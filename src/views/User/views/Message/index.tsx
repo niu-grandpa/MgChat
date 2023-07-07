@@ -8,29 +8,21 @@ import {
 } from '@/services/typing';
 import { ipcRenderer } from 'electron';
 import { throttle } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MessageList from './MessageList';
 
 function MessageView() {
   const { userData } = useUserStore(state => ({ userData: state.data }));
 
   const uid = useMemo(() => userData?.uid, [userData]);
-
+  const chunkPos = useRef(0);
   const [buffer, setBuffer] = useState<MessageLogs[]>([]);
   const [msgHistory, setMsgHistory] = useState<MessageLogs[]>([]);
 
   // 从本地缓存获取所有聊天记录
   useEffect(() => {
     const onGetHistory = (_: any, data: FileMessageLogs) => {
-      if (data.code !== 200) return;
-      const newHistory = Object.keys(data).map(key => {
-        const item = data[key] as any;
-        return {
-          uid,
-          friend: key,
-          ...item,
-        };
-      });
+      const newHistory = getHistoryFromCache(uid!, data);
       setMsgHistory(v => [...v, ...newHistory]);
     };
     if (uid) {
@@ -73,14 +65,14 @@ function MessageView() {
   // 节流优化
   const onCachedMessages = useCallback(
     throttle(() => {
-      buffer.forEach(item => {
-        // 服务器存储 vip
-        // msgApi.save(item);
-        // 本地存储
-        ipcRenderer.send('post-chat-data', item);
-      });
+      const currentChunkPos = chunkPos.current;
+      const messagesToCache = buffer.slice(currentChunkPos);
+      for (let i = 0; i < messagesToCache.length; i++) {
+        ipcRenderer.send('post-chat-data', messagesToCache[i]);
+      }
+      chunkPos.current = currentChunkPos + messagesToCache.length;
     }, 1000),
-    []
+    [buffer]
   );
 
   useEffect(() => {
@@ -101,3 +93,16 @@ function MessageView() {
 }
 
 export default MessageView;
+
+// 从本地缓存获取所有聊天记录
+function getHistoryFromCache(uid: string, data: FileMessageLogs) {
+  const { code, ...rest } = data;
+  if (code !== 200) return [];
+  return Object.entries(rest).map(([key, item]) => {
+    return {
+      ...item,
+      uid,
+      friend: key,
+    };
+  });
+}

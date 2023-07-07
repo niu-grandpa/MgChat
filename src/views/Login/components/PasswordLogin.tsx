@@ -1,6 +1,6 @@
 import Avatar from '@/components/Avatar';
 import PwdFormInput from '@/components/PwdInput';
-import { useCallbackPlus, useLocalUsers } from '@/hooks';
+import { useCallbackPlus, useCancelFn, useLocalUsers } from '@/hooks';
 import { type LocalUsersType } from '@/hooks/useLocalUsers';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
 import {
@@ -22,7 +22,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
-import { LoginCommonProps, cancelTime } from '..';
+import { LoginCommonProps } from '..';
 
 type LoginWithPwd = {
   uid: string;
@@ -40,8 +40,11 @@ function PasswordLogin({
   const localUsers = useLocalUsers();
   const [form] = useForm<LocalUsersType>();
 
+  const cancelFn = useCancelFn(3000);
+
   const [arrow, setArrow] = useState(false);
   const [avatar, setAvatar] = useState('');
+  const [startTask, setStartTask] = useState(false);
 
   const uid: string = useWatch('uid', form as FormInstance);
   useEffect(() => {
@@ -70,19 +73,33 @@ function PasswordLogin({
     [form, localUsers]
   );
 
-  const handleLogin = useCallbackPlus<UserInfo>(
-    async (values: LoginWithPwd) => {
+  useEffect(() => {
+    if (startTask && cancel) {
+      setStartTask(false);
+      cancelFn.cancel();
+    }
+  }, [startTask, cancel]);
+
+  const handleStartTask = useCallback(
+    (values: LoginWithPwd) => {
       onBeforeLogin();
-      const timer = setTimeout(async () => {
-        const { uid, password } = values;
-        const data = await apiHandler(() =>
-          userApi.loginWithPwd({ uid, password })
-        );
-        onLogin(data ? { ...data, ...form.getFieldsValue() } : 'failed');
-      }, cancelTime);
-      if (cancel) clearTimeout(timer);
+      if (!startTask) {
+        setStartTask(true);
+        cancelFn.start(() => onReadyLogin.invoke(values));
+      }
     },
-    [cancel, onLogin, onBeforeLogin]
+    [onBeforeLogin, startTask]
+  );
+
+  const onReadyLogin = useCallbackPlus<UserInfo>(
+    async (values: LoginWithPwd) => {
+      const { uid, password } = values;
+      const data = await apiHandler(() =>
+        userApi.loginWithPwd({ uid, password })
+      );
+      onLogin(data ? { ...data, ...form.getFieldsValue() } : 'failed');
+    },
+    [onLogin]
   ).before(() => {
     const { uid, password } = form.getFieldsValue();
     if (!uid || uid.length < 9) {
@@ -119,7 +136,7 @@ function PasswordLogin({
         ),
         onClick: () => handleGetLocalUser(uid),
       })),
-    [localUsers]
+    [localUsers, handleGetLocalUser]
   );
 
   return (
@@ -129,7 +146,7 @@ function PasswordLogin({
         form={form}
         className='pwd-login'
         autoComplete='off'
-        onFinish={handleLogin.invoke}
+        onFinish={handleStartTask}
         onValuesChange={({ auto }) =>
           auto && form.setFieldValue('remember', auto)
         }>

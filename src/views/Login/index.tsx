@@ -5,7 +5,7 @@ import { useUserStore } from '@/model';
 import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileLogin from './components/MobileLogin';
 import PasswordLogin from './components/PasswordLogin';
@@ -31,8 +31,13 @@ function LoginView() {
   const userStore = useUserStore();
   const localUsers = useLocalUsers();
 
-  const [cancel, setCancel] = useState(false);
+  const timer = useRef<NodeJS.Timeout>();
+
+  const lastToken = useMemo(() => localStorage.getItem(tokenKey), []);
+
   const [wait, setWait] = useState(false);
+  const [auto, setAuto] = useState(lastToken !== undefined);
+  const [cancel, setCancel] = useState<boolean | undefined>(undefined);
 
   const onLogin = useCallback((data: SaveUserData | 'failed') => {
     if (data === 'failed') {
@@ -46,33 +51,47 @@ function LoginView() {
     navTo('/user', { state: { login: true, uid: data.uid } });
   }, []);
 
-  const onAutoLogin = useCallback(() => {
-    const lastToken = localStorage.getItem(tokenKey);
+  const onLoginWithToken = useCallback(async () => {
     if (!lastToken) return;
-    setWait(true);
-    const timer = setTimeout(async () => {
-      const data = await apiHandler(() => userApi.loginWithToken(lastToken));
-      if (data) {
-        onLogin({ ...data, remember: true, auto: true });
-      } else {
-        setWait(false);
-        clearTimeout(timer);
-      }
-    }, cancelTime);
-    if (cancel) {
+    const data = await apiHandler(() => userApi.loginWithToken(lastToken));
+    if (data) {
+      onLogin({ ...data, remember: true, auto: true });
+    } else {
       setWait(false);
-      clearTimeout(timer);
+      setAuto(false);
     }
-  }, [onLogin]);
+  }, [onLogin, lastToken]);
 
-  useEffect(onAutoLogin, [onAutoLogin]);
+  const handleAutoLogin = useCallback(() => {
+    setWait(true);
+    timer.current = setTimeout(onLoginWithToken, cancelTime);
+  }, []);
+
+  let tryCount = 0;
+  useEffect(() => {
+    tryCount++;
+    if (tryCount !== 2 && auto) handleAutoLogin();
+  }, [auto]);
+
+  useEffect(() => {
+    if (auto && cancel && timer.current) {
+      setWait(false);
+      setAuto(false);
+      setCancel(undefined);
+      clearTimeout(timer.current);
+      timer.current = undefined;
+    }
+  }, [auto, cancel, timer.current]);
 
   const props: LoginCommonProps = useMemo(
     () => ({
       online,
       cancel,
       onLogin,
-      onBeforeLogin: () => setWait(true),
+      onBeforeLogin: () => {
+        setWait(true);
+        setCancel(false);
+      },
     }),
     [online, cancel, onLogin]
   );
@@ -87,16 +106,18 @@ function LoginView() {
       {
         key: 'mobile',
         label: `手机号登录`,
-        children: <MobileLogin {...props} onRegisterSuccess={onAutoLogin} />,
+        children: (
+          <MobileLogin {...props} onRegisterSuccess={onLoginWithToken} />
+        ),
       },
     ],
-    [props, onAutoLogin]
+    [props, onLoginWithToken]
   );
 
   const handleCancel = useCallback(() => {
     setWait(false);
     setCancel(true);
-    Promise.resolve().then(() => setCancel(false));
+    Promise.resolve().then(() => setCancel(undefined));
   }, []);
 
   return (
@@ -116,7 +137,7 @@ function LoginView() {
           />
         </Content>
       </Layout>
-      <Waitting open={wait} onCancel={handleCancel} />
+      <Waitting open={wait} destroyOnClose onCancel={handleCancel} />
     </>
   );
 }

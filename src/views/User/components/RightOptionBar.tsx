@@ -45,7 +45,7 @@ function OptionBar({ icon, status, onChange }: Props) {
       onChange?.(idx);
       navigate(path.current[idx]);
     },
-    [onChange, path]
+    [onChange, navigate]
   );
 
   const handleLogout = useCallback(() => {
@@ -59,7 +59,7 @@ function OptionBar({ icon, status, onChange }: Props) {
   return (
     <>
       <div>
-        <Avatar size={36} />
+        <Avatar size={36} icon={icon} />
         <Badge
           status={statusType.current[status || UserStatus.ONLINE]}
           className='user-siderbar-status'
@@ -72,7 +72,7 @@ function OptionBar({ icon, status, onChange }: Props) {
             size='large'
             onClick={() => handleClick(0)}
             icon={<CommentOutlined />}
-            className={eq(index, 0) ? 'active' : ''}
+            className={index === 0 ? 'active' : ''}
           />
         </Badge>
         <Badge count={0} dot offset={[-10, 10]}>

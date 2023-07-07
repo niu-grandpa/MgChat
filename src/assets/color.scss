@@ -16,10 +16,13 @@ $color-border-2: #f7f8fa;
 $color-border-3: #f2f3f5;
 $color-border-4: #c9cdd4;
 $color-gray-1: #6b7785;
+
 $background: linear-gradient(
-  270deg,
-  rgba(0, 43, 220, 0.2) 0%,
-  rgba(50, 222, 212, 0.2) 100%
+  -45deg,
+  #3bade3 0%,
+  #576fe6 25%,
+  #9844b7 51%,
+  #ff357f 100%
 );
 $background-2: #f2f7f7;
 $background-3: #363e47;

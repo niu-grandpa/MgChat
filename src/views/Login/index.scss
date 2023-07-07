@@ -1,4 +1,5 @@
 @import '@/assets/color.scss';
+@import '@/assets/animate.scss';
 
 .login {
   height: 100vh;
@@ -16,9 +17,9 @@
     position: relative;
     height: 87px;
     padding: 0;
-    background-color: $color-light;
-    background-image: url('../../assets/icons/background.svg');
-    background-size: cover;
+    background-size: 300% 300%;
+    background-image: $background;
+    animation: $AnimateBG;
   }
 
   &-avatar {
@@ -28,7 +29,7 @@
     transform: translateX(-50%);
     border: 3px solid $color-primary-2;
     border-radius: 50%;
-    box-shadow: 0 0 20px $color-primary-5;
+    box-shadow: 0 0 15px $color-primary-3;
     -webkit-app-region: no-drag;
     pointer-events: none;
   }
@@ -51,7 +52,9 @@
     width: 100%;
     z-index: 9999;
     color: $color-light;
-    background-color: #2980b9 !important;
+    background-size: 300% 300% !important;
+    background-image: $background !important;
+    animation: $AnimateBG;
 
     .ant-btn {
       position: absolute;
