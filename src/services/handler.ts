@@ -43,7 +43,7 @@ export function apiHandler<T extends unknown>(
         return false;
       } else {
         message.error('服务器错误');
-        console.error('[apiHandler] error: ', error.response.data);
+        console.error('[apiHandler] error: ', error.response?.data);
         return false;
       }
     } finally {

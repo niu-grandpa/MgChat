@@ -16,10 +16,11 @@ import { useNavigate } from 'react-router-dom';
 type Props = {
   icon?: string;
   status?: UserStatus;
+  onLogout: () => void;
   onChange?: (tab: number) => void;
 };
 
-function OptionBar({ icon, status, onChange }: Props) {
+function OptionBar({ icon, status, onLogout, onChange }: Props) {
   const navigate = useNavigate();
 
   const [index, setIndex] = useState(0);
@@ -47,10 +48,6 @@ function OptionBar({ icon, status, onChange }: Props) {
     },
     [onChange, navigate]
   );
-
-  const handleLogout = useCallback(() => {
-    //
-  }, []);
 
   useEffect(() => {
     handleClick(0);
@@ -114,7 +111,7 @@ function OptionBar({ icon, status, onChange }: Props) {
           size='large'
           icon={<LogoutOutlined />}
           className='logout'
-          onClick={handleLogout}
+          onClick={onLogout}
         />
       </Space>
     </>

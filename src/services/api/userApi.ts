@@ -73,3 +73,10 @@ export const loginWithMobile = async (params: {
   });
   return data;
 };
+
+export const logout = async (uid: string): ResponseData<null> => {
+  const { data } = await axios.post(`${URL}/logout`, {
+    data: { uid },
+  });
+  return data;
+};

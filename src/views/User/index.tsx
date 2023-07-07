@@ -1,39 +1,59 @@
 import NavBar from '@/components/NavBar';
-import { useLocalUsers } from '@/hooks';
+import { useUserStore } from '@/model';
+import { apiHandler, userApi } from '@/services';
 import { Layout } from 'antd';
 import { ipcRenderer } from 'electron';
-import { useCallback, useEffect, useMemo } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useCallback, useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import pkg from '../../../package.json';
 import RightOptionBar from './components/RightOptionBar';
 import './index.scss';
 
+const [initW, initH] = pkg.debug.winSize;
 const { Sider } = Layout;
 
 function UserView() {
-  const { state } = useLocation() as {
-    state: { login: boolean; uid: string };
-  };
+  const navTo = useNavigate();
 
-  const localUsers = useLocalUsers();
-  const userData = useMemo(() => state && localUsers.get(state.uid), [state]);
+  const { data } = useUserStore();
 
-  const handleChangeShape = useCallback(() => {
-    ipcRenderer.send('resize-win', {
-      pathname: '/',
-      width: 295,
-      height: 660,
-      resizable: true,
-    });
-    ipcRenderer.send('adjust-win-pos', {
-      pathname: '/',
-      top: 60,
-      leftDelta: 320,
-    });
-  }, []);
+  const resizeWindow = useCallback(
+    (width: number, height: number, resizable: boolean) => {
+      ipcRenderer.send('resize-win', {
+        pathname: '/',
+        width,
+        height,
+        resizable,
+      });
+    },
+    []
+  );
+
+  const adjustWindowPosition = useCallback(
+    (top: number, leftDelta: number, center: boolean) => {
+      ipcRenderer.send('adjust-win-pos', {
+        pathname: '/',
+        top,
+        leftDelta,
+        center,
+      });
+    },
+    []
+  );
 
   useEffect(() => {
-    if (state && state.login) handleChangeShape();
-  }, [state, handleChangeShape]);
+    if (data !== null) {
+      resizeWindow(295, 660, true);
+      adjustWindowPosition(60, 320, false);
+    }
+  }, [data]);
+
+  const handleLogout = useCallback(async () => {
+    await apiHandler(() => userApi.logout(data!.uid));
+    navTo('/', { replace: true });
+    resizeWindow(initW, initH, false);
+    adjustWindowPosition(0, 0, true);
+  }, [data?.uid]);
 
   return (
     <Layout className='user'>
@@ -44,7 +64,11 @@ function UserView() {
         <Outlet />
       </Sider>
       <Sider width={46} className='user-siderbar'>
-        <RightOptionBar status={userData?.status} icon={userData?.icon} />
+        <RightOptionBar
+          status={data?.status}
+          icon={data?.icon}
+          onLogout={handleLogout}
+        />
       </Sider>
     </Layout>
   );

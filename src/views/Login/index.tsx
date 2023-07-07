@@ -1,7 +1,7 @@
 import NavBar from '@/components/NavBar';
 import NetAlert from '@/components/NetAlert';
 import { useLocalUsers, useOnline } from '@/hooks';
-import { useUserStore } from '@/model';
+import { isAutoLogin, useUserStore } from '@/model';
 import { apiHandler, userApi } from '@/services';
 import { UserInfo } from '@/services/typing';
 import { Layout, Tabs, TabsProps } from 'antd';
@@ -27,16 +27,19 @@ const tokenKey = 'lastToken';
 
 function LoginView() {
   const navTo = useNavigate();
+
   const online = useOnline();
   const userStore = useUserStore();
   const localUsers = useLocalUsers();
 
+  const { count: autoCount, setCount } = isAutoLogin();
+
+  const tryCount = useRef(0);
   const timer = useRef<NodeJS.Timeout>();
 
   const lastToken = useMemo(() => localStorage.getItem(tokenKey), []);
 
   const [wait, setWait] = useState(false);
-  const [auto, setAuto] = useState(lastToken !== undefined);
   const [cancel, setCancel] = useState<boolean | undefined>(undefined);
 
   const onLogin = useCallback((data: SaveUserData | 'failed') => {
@@ -48,7 +51,7 @@ function LoginView() {
     userStore.setState(data);
     // 存储当前登录用户的token，下次自动登录使用
     data.auto && localStorage.setItem(tokenKey, data.token);
-    navTo('/user', { state: { login: true, uid: data.uid } });
+    navTo('/user');
   }, []);
 
   const onLoginWithToken = useCallback(async () => {
@@ -58,30 +61,28 @@ function LoginView() {
       onLogin({ ...data, remember: true, auto: true });
     } else {
       setWait(false);
-      setAuto(false);
     }
   }, [onLogin, lastToken]);
 
-  const handleAutoLogin = useCallback(() => {
-    setWait(true);
-    timer.current = setTimeout(onLoginWithToken, cancelTime);
-  }, []);
-
-  let tryCount = 0;
+  // 执行是否自动登录
   useEffect(() => {
-    tryCount++;
-    if (tryCount !== 2 && auto) handleAutoLogin();
-  }, [auto]);
+    tryCount.current++;
+    if (tryCount.current !== 2 && lastToken && autoCount < 1) {
+      setWait(true);
+      setCount(1);
+      timer.current = setTimeout(onLoginWithToken, cancelTime);
+    }
+  }, [autoCount, lastToken, onLoginWithToken]);
 
+  // 登录取消
   useEffect(() => {
-    if (auto && cancel && timer.current) {
+    if (cancel && timer.current) {
       setWait(false);
-      setAuto(false);
       setCancel(undefined);
       clearTimeout(timer.current);
       timer.current = undefined;
     }
-  }, [auto, cancel, timer.current]);
+  }, [cancel]);
 
   const props: LoginCommonProps = useMemo(
     () => ({
