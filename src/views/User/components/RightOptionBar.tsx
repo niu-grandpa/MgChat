@@ -9,8 +9,9 @@ import {
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
 import { Badge, BadgeProps, Button, Space } from 'antd';
+import { ipcRenderer } from 'electron';
 import { eq } from 'lodash-es';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type Props = {
@@ -20,31 +21,41 @@ type Props = {
   onChange?: (tab: number) => void;
 };
 
+const path = [
+  '/user/message',
+  '/user/friends',
+  '/user/group',
+  '/find',
+  '/user/settings',
+];
+const statusType: Record<number, BadgeProps['status']> = {
+  1: 'success',
+  2: 'processing',
+  3: 'error',
+  4: 'default',
+  5: 'warning',
+};
+
 function OptionBar({ icon, status, onLogout, onChange }: Props) {
   const navigate = useNavigate();
 
   const [index, setIndex] = useState(0);
 
-  const path = useRef([
-    '/user/message',
-    '/user/friends',
-    '/user/group',
-    '/user/find',
-    '/user/settings',
-  ]);
-  const statusType = useRef<Record<number, BadgeProps['status']>>({
-    1: 'success',
-    2: 'processing',
-    3: 'error',
-    4: 'default',
-    5: 'warning',
-  });
-
   const handleClick = useCallback(
     (idx: number) => {
-      setIndex(idx);
+      const pathname = path[idx];
+      // 好友搜索页
+      if (idx === 3) {
+        ipcRenderer.send('open-win', {
+          pathname,
+          center: true,
+          useCache: false,
+        });
+      } else {
+        navigate(pathname);
+        setIndex(idx);
+      }
       onChange?.(idx);
-      navigate(path.current[idx]);
     },
     [onChange, navigate]
   );
@@ -58,7 +69,7 @@ function OptionBar({ icon, status, onLogout, onChange }: Props) {
       <div>
         <Avatar size={36} icon={icon} />
         <Badge
-          status={statusType.current[status || UserStatus.ONLINE]}
+          status={statusType[status || UserStatus.ONLINE]}
           className='user-siderbar-status'
         />
       </div>
@@ -95,7 +106,6 @@ function OptionBar({ icon, status, onLogout, onChange }: Props) {
           size='large'
           onClick={() => handleClick(3)}
           icon={<PlusOutlined />}
-          className={eq(index, 3) ? 'active' : ''}
         />
         <Badge count={0} dot offset={[-10, 10]}>
           <Button

@@ -105,17 +105,6 @@ class Subprocess {
     setInterval(cleanup, 1 * 60 * 1000);
   }
 
-  private ipcMainEventMap: Record<ChannelType, Function> = {
-    'open-win': this.createSubWindow,
-    'close-win': this.onCloseWindow,
-    minimize: this.onMinimizeWin,
-    maximize: this.onMaximizeWin,
-    'resize-win': this.onResizeWin,
-    'adjust-win-pos': this.onAdjustPos,
-    'request-chat-data': this.getChatDataByUid,
-    'post-chat-data': this.postChatData,
-  };
-
   /**
    * 通过修改窗口url地址加载页面
    * @param win
@@ -142,12 +131,14 @@ class Subprocess {
    */
   private createWindow(
     pathname: string,
-    options: BrowserWindowConstructorOptions
+    options: BrowserWindowConstructorOptions & { useCache?: boolean }
   ): BrowserWindow {
     const { lru } = Subprocess;
 
+    options.useCache = options.useCache ?? true;
+
     // 缓存优化
-    if (lru.has(pathname)) {
+    if (options.useCache && lru.has(pathname)) {
       const instance = lru.get(pathname)!;
       instance.show();
       return instance;
@@ -169,8 +160,9 @@ class Subprocess {
       },
     });
 
-    lru.put(pathname, win, true);
     this.loadPage(pathname, win);
+
+    options.useCache && lru.put(pathname, win, true);
 
     return win;
   }
@@ -199,7 +191,7 @@ class Subprocess {
    * 创建主窗口
    * @returns BrowserWindow
    */
-  createMain(pathname: string): BrowserWindow {
+  createMain = (pathname: string): BrowserWindow => {
     const win = this.createWindow(pathname, {
       width,
       height,
@@ -222,17 +214,20 @@ class Subprocess {
     update(win);
 
     return win;
-  }
+  };
 
   /**
    * 创建子窗口
    * @param _
    * @param param1
    */
-  private createSubWindow(_: any, { pathname, ...rest }: CreateChildArgs) {
+  private createSubWindow = (
+    _: any,
+    { pathname, ...rest }: CreateChildArgs
+  ) => {
     const win = this.createWindow(pathname, rest);
     win.focus();
-  }
+  };
 
   /**
    * 关闭窗口
@@ -374,6 +369,17 @@ class Subprocess {
       }
     });
   }
+
+  private ipcMainEventMap: Record<ChannelType, Function> = {
+    'open-win': this.createSubWindow,
+    'close-win': this.onCloseWindow,
+    minimize: this.onMinimizeWin,
+    maximize: this.onMaximizeWin,
+    'resize-win': this.onResizeWin,
+    'adjust-win-pos': this.onAdjustPos,
+    'request-chat-data': this.getChatDataByUid,
+    'post-chat-data': this.postChatData,
+  };
 }
 
 export default new Subprocess();

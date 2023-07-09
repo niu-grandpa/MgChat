@@ -1,7 +1,9 @@
-import FriendList from '@/views/User/views/Friends';
-import GroupList from '@/views/User/views/Group';
-import MessageList from '@/views/User/views/Message';
+import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
+
+const MessageList = lazy(() => import('@/views/User/views/Message'));
+const FriendList = lazy(() => import('@/views/User/views/Friends'));
+const GroupList = lazy(() => import('@/views/User/views/Group'));
 
 const childrenRoutes = {
   user: [

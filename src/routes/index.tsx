@@ -23,7 +23,7 @@ export default [
   },
   {
     path: '/find',
-    element: '',
+    element: <LazyImport comp={() => import('@/views/User/views/Find')} />,
   },
   {
     path: '/chat/:data',
