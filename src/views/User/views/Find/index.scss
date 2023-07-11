@@ -1,0 +1,39 @@
+@import '@/assets/color.scss';
+
+.find {
+  &-tabs {
+    .ant-tabs {
+      &-nav-list,
+      &-content-holder {
+        -webkit-app-region: no-drag;
+      }
+
+      &-nav-wrap {
+        justify-content: center;
+      }
+
+      &-tab {
+        padding: 14px !important;
+      }
+    }
+  }
+
+  &-p {
+    &-search {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 80px 24px 80px;
+
+      .ant-input-search {
+        margin-bottom: 14px;
+      }
+    }
+
+    &-result {
+      padding: 16px;
+      border-top: 1px solid $color-border-3;
+    }
+  }
+}

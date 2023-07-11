@@ -12,7 +12,7 @@ export const enum UserPrivilege {}
 export const enum UserGender {
   MAN = 0,
   WOMAN = 1,
-  NONE = 3,
+  NONE = 2,
 }
 
 /**

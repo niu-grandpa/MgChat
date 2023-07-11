@@ -54,16 +54,21 @@ class Subprocess {
       }
       return null;
     },
-    put: (pathname: string, instance: BrowserWindow, active = false) => {
+    put: (
+      pathname: string,
+      instance: BrowserWindow,
+      active = false,
+      keepAlive = true
+    ) => {
       const { cacheMap } = this;
       // 执行更新
-      if (cacheMap.has(pathname)) {
+      if (keepAlive && cacheMap.has(pathname)) {
         cacheMap.delete(pathname);
       }
       cacheMap.set(pathname, {
         instance,
         active,
-        keepAlive: true,
+        keepAlive,
         expiredTime: Date.now() + 15 * 60 * 1000,
       });
     },
@@ -162,7 +167,7 @@ class Subprocess {
 
     this.loadPage(pathname, win);
 
-    options.useCache && lru.put(pathname, win, true);
+    lru.put(pathname, win, true, options.useCache);
 
     return win;
   }

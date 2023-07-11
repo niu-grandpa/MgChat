@@ -11,3 +11,32 @@
 }
 
 $AnimateBG: keyframesAnimateBG 20s ease infinite;
+
+@keyframes skChase {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+$AnimateSk: skChase 2.5s infinite linear both;
+
+@keyframes skChaseDot {
+  80%,
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+$AnimateSkChaseDot: skChaseDot 2s infinite ease-in-out both;
+
+@keyframes skChaseDotBefore {
+  50% {
+    transform: scale(0.4);
+  }
+  100%,
+  0% {
+    transform: scale(1);
+  }
+}
+
+$AnimateSkChaseDotBefore: skChaseDotBefore 2s infinite ease-in-out both;

@@ -8,12 +8,12 @@ import { memo, useCallback, useMemo } from 'react';
 import './index.scss';
 
 type Props = {
-  offset: [number | string, number | string];
+  offset?: [number | string, number | string];
   size?: number;
   /**对应窗口的路由路径 */
   pathname: string;
   /**窗口关闭后保存存活状态 */
-  keepAliveWhenClosed: boolean;
+  keepAliveWhenClosed?: boolean;
   onClose?: () => void;
 };
 
@@ -25,7 +25,7 @@ function ActionBar({
   keepAliveWhenClosed,
 }: Props) {
   const style = useMemo(
-    () => ({ top: offset[0], left: offset[1], fontSize: size }),
+    () => ({ top: offset?.[0] || -6, right: offset?.[1] || 0, fontSize: size }),
     [offset, size]
   );
 
@@ -34,7 +34,7 @@ function ActionBar({
       const params = { pathname };
       if (channel === 'close-win') {
         // @ts-ignore
-        params['keepAlive'] = keepAliveWhenClosed;
+        params['keepAlive'] = keepAliveWhenClosed ?? false;
       }
       onClose?.();
       ipcRenderer.send(channel, params);
