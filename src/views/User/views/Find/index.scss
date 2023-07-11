@@ -8,8 +8,11 @@
         -webkit-app-region: no-drag;
       }
 
-      &-nav-wrap {
-        justify-content: center;
+      &-nav {
+        &-wrap {
+          justify-content: center;
+        }
+        margin: 0;
       }
 
       &-tab {
@@ -24,7 +27,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 0 80px 24px 80px;
+      padding: 18px 80px;
+      background-color: $color-border-2;
 
       .ant-input-search {
         margin-bottom: 14px;
@@ -32,8 +36,39 @@
     }
 
     &-result {
+      height: 71vh;
       padding: 16px;
       border-top: 1px solid $color-border-3;
+      overflow: auto;
+
+      &-user {
+        display: flex;
+      }
+
+      &-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-top: -3px;
+        margin-left: 12px;
+
+        .name {
+          max-width: 135px;
+          display: block;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+
+          color: #000000;
+        }
+
+        .ant-btn-sm {
+          font-size: 12px;
+          height: 20px;
+          padding: 0px 10px;
+          border-radius: 4px;
+        }
+      }
     }
   }
 }

@@ -50,7 +50,7 @@ function OptionBar({ icon, status, onLogout, onChange }: Props) {
           pathname,
           center: true,
           useCache: false,
-          width: 700,
+          width: 720,
           height: 567,
         });
       } else {

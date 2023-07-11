@@ -1,4 +1,4 @@
-import defaultAvatar from '@/assets/icons/avatar.png';
+import defaultAvatar from '@/assets/icons/avatar.jpg';
 import { Avatar, AvatarProps } from 'antd';
 import { memo } from 'react';
 

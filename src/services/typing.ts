@@ -92,3 +92,11 @@ export type ReceivedMessage = {
 export type FileMessageLogs = Record<string, MessageLogs> & {
   code: 200 | 404 | 500;
 };
+
+export type SearchUserResults = {
+  uid: string;
+  age: number;
+  city: string;
+  icon: string;
+  nickname: string;
+};

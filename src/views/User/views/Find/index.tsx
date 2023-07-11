@@ -13,6 +13,7 @@ function Find() {
   return (
     <Tabs
       size='large'
+      animated
       defaultActiveKey='p'
       className='find-tabs'
       items={tabItems}
