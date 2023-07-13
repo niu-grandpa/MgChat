@@ -42,6 +42,7 @@
     "axios": "^1.4.0",
     "electron": "^23.2.0",
     "electron-builder": "^23.6.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

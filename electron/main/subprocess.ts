@@ -28,14 +28,14 @@ const [width, height] = pkg.debug.winSize;
  * 自己的Electron客户端子进程
  */
 class Subprocess {
-  static cacheMap: CacheMap = new Map();
+  protected cacheMap: CacheMap = new Map();
 
   /** keepAlive最大容量 */
-  static capacity = 4;
+  private capacity = 4;
 
-  static indexHtml = '';
+  private indexHtml = '';
 
-  static url: string | undefined = '';
+  private url: string | undefined = '';
 
   /**
    * 缓存定额的窗口数量在内存中，实现后台存活。
@@ -43,13 +43,17 @@ class Subprocess {
    * 每次关闭窗口后都会延长缓存的过期时间，而关闭窗口的次数越少，
    * 被自动回收的可能性就越大。
    */
-  static lru = {
+  private lru = {
     has: (key: string) => this.cacheMap.has(key),
     get: (pathname: string, active = true): BrowserWindow | null => {
-      const cache = this.cacheMap.get(pathname);
+      const { cacheMap } = this;
+      const cache = cacheMap.get(pathname);
       if (cache?.instance) {
-        // 更新缓存
-        this.lru.put(pathname, cache.instance, active);
+        // 标记为活跃状态
+        cacheMap.set(pathname, {
+          ...cache,
+          active,
+        });
         return cache.instance;
       }
       return null;
@@ -60,17 +64,29 @@ class Subprocess {
       active = false,
       keepAlive = true
     ) => {
-      const { cacheMap } = this;
-      // 执行更新
-      if (keepAlive && cacheMap.has(pathname)) {
-        cacheMap.delete(pathname);
+      const { cacheMap, lru } = this;
+      const obj = { instance, active, keepAlive };
+      const newExpiredTime = Date.now() + 15 * 60 * 1000;
+
+      if (keepAlive) {
+        // 更新在表中的位置，刷新过期时间
+        lru.has(pathname) && cacheMap.delete(pathname);
+        cacheMap.set(pathname, {
+          ...obj,
+          expiredTime: newExpiredTime,
+        });
+      } else {
+        let expiredTime = newExpiredTime;
+        if (lru.has(pathname)) {
+          // 没有keepalvie则使用旧的过期时间
+          const { expiredTime: oldTime } = cacheMap.get(pathname)!;
+          expiredTime = oldTime;
+        }
+        cacheMap.set(pathname, {
+          ...obj,
+          expiredTime,
+        });
       }
-      cacheMap.set(pathname, {
-        instance,
-        active,
-        keepAlive,
-        expiredTime: Date.now() + 15 * 60 * 1000,
-      });
     },
     recycle: () => {
       const { cacheMap, capacity } = this;
@@ -90,7 +106,7 @@ class Subprocess {
    * 此时就需要将其清理掉。
    */
   autoClearCache() {
-    const { cacheMap } = Subprocess;
+    const { cacheMap } = this;
     const cloneMap = new Map([...cacheMap]);
     const cleanup = () => {
       if (!cloneMap.size) return;
@@ -99,7 +115,8 @@ class Subprocess {
         // 只清理已过期的不活跃窗口和非主窗口
         if (
           pathname !== '/' &&
-          (!keepAlive || !active) &&
+          pathname !== '/user' &&
+          !active &&
           expiredTime < Date.now()
         ) {
           instance.close();
@@ -116,7 +133,7 @@ class Subprocess {
    * @param pathname
    */
   private loadPage(pathname: string, win: BrowserWindow) {
-    const { url, indexHtml } = Subprocess;
+    const { url, indexHtml } = this;
     pathname = pathname.replace('/', '');
     if (url) {
       // 改变窗口地址，顺势加载路由页面
@@ -134,16 +151,16 @@ class Subprocess {
    * @param options BrowserWindow配置项
    * @returns BrowserWindow
    */
-  private createWindow(
+  private createWindow = (
     pathname: string,
     options: BrowserWindowConstructorOptions & { useCache?: boolean }
-  ): BrowserWindow {
-    const { lru } = Subprocess;
+  ): BrowserWindow => {
+    const { lru } = this;
 
     options.useCache = options.useCache ?? true;
 
     // 缓存优化
-    if (options.useCache && lru.has(pathname)) {
+    if (lru.has(pathname)) {
       const instance = lru.get(pathname)!;
       instance.show();
       return instance;
@@ -170,7 +187,7 @@ class Subprocess {
     lru.put(pathname, win, true, options.useCache);
 
     return win;
-  }
+  };
 
   /**
    * 注册主线程自定义事件
@@ -187,9 +204,9 @@ class Subprocess {
    * @param config
    */
   init(config: { indexHtml: string; capacity: number; url?: string }) {
-    Subprocess.url = config.url;
-    Subprocess.indexHtml = config.indexHtml;
-    Subprocess.capacity = config.capacity;
+    this.url = config.url;
+    this.indexHtml = config.indexHtml;
+    this.capacity = config.capacity;
   }
 
   /**
@@ -237,29 +254,35 @@ class Subprocess {
   /**
    * 关闭窗口
    */
-  private onCloseWindow(_: any, { pathname, keepAlive }: CloseWindowArgs) {
+  private onCloseWindow = (
+    _: any,
+    { pathname, keepAlive }: CloseWindowArgs
+  ) => {
     // 关闭主窗口，结束整个进程
     if (pathname === '/' || pathname === '/user') {
       app.emit('window-all-closed');
       return;
     }
 
-    const { lru, cacheMap } = Subprocess;
-    const { instance } = cacheMap.get(pathname)!;
+    const { lru, cacheMap } = this;
 
+    const instance = cacheMap.get(pathname)?.instance;
+
+    if (!instance) return;
     if (keepAlive) {
       lru.put(pathname, instance);
       instance.hide();
     } else {
       instance.close();
+      cacheMap.delete(pathname);
     }
-  }
+  };
 
   /**
    * 销毁所有窗口
    */
   destroyAll() {
-    const { cacheMap } = Subprocess;
+    const { cacheMap } = this;
     const instances = Array.from(cacheMap.values());
     while (instances.length) {
       instances.pop()?.instance.close();
@@ -268,38 +291,38 @@ class Subprocess {
   }
 
   /**最小化窗口 */
-  private onMinimizeWin(_: any, { pathname }: { pathname: string }) {
-    const { instance } = Subprocess.cacheMap.get(pathname)!;
+  private onMinimizeWin = (_: any, { pathname }: { pathname: string }) => {
+    const { instance } = this.cacheMap.get(pathname)!;
     instance.isMinimized() ? instance.restore() : instance.minimize();
-  }
+  };
 
   /**最大化窗口 */
-  private onMaximizeWin(_: any, { pathname }: { pathname: string }) {
-    const { instance } = Subprocess.cacheMap.get(pathname)!;
+  private onMaximizeWin = (_: any, { pathname }: { pathname: string }) => {
+    const { instance } = this.cacheMap.get(pathname)!;
     instance.isMaximized() ? instance.restore() : instance.maximize();
-  }
+  };
 
   /**调整窗口尺寸 */
-  private onResizeWin(
+  private onResizeWin = (
     _: any,
     { pathname, width, height, resizable }: CreateChildArgs
-  ) {
-    const cache = Subprocess.cacheMap.get(pathname);
+  ) => {
+    const cache = this.cacheMap.get(pathname);
     if (!cache) return;
     const { instance } = cache;
     instance.setSize(width!, height!, true);
     if (resizable !== undefined) instance.setResizable(resizable);
-  }
+  };
 
   /**
    * 调整窗口位置
    * left值由屏幕宽度减去给定的左差量
    */
-  private onAdjustPos(
+  private onAdjustPos = (
     _: any,
     { top, center, pathname, leftDelta }: AdjustWinPosArgs
-  ) {
-    const cache = Subprocess.cacheMap.get(pathname);
+  ) => {
+    const cache = this.cacheMap.get(pathname);
     if (!cache) return;
     const { instance } = cache;
     if (center) {
@@ -308,7 +331,7 @@ class Subprocess {
     }
     const { width } = screen.getPrimaryDisplay().workAreaSize;
     instance.setPosition(width - leftDelta, top, true);
-  }
+  };
 
   /**
    * 保存用户聊天数据

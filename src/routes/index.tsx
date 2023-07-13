@@ -22,7 +22,7 @@ export default [
     element: <LazyImport comp={() => import('@/views/Forget')} />,
   },
   {
-    path: '/find',
+    path: '/find/:data',
     element: <LazyImport comp={() => import('@/views/User/views/Find')} />,
   },
   {

@@ -15,11 +15,20 @@ import {
   message,
 } from 'antd';
 import { MouseEvent, useCallback, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+
+type ApplyAddFriends = {
+  message: string;
+  alias: string;
+  group: number;
+};
 
 const { useForm } = Form;
 
 function FindPeople() {
   const online = useOnline();
+
+  const { search } = useLocation();
 
   const [filter, setFilter] = useState({
     keywords: '',
@@ -76,8 +85,9 @@ function FindPeople() {
     [online]
   );
 
-  const handleAddUser = useCallback(() => {
+  const handleAddUser = useCallback((values: ApplyAddFriends) => {
     setOpen(false);
+    console.log(values);
   }, []);
 
   return (
@@ -87,7 +97,7 @@ function FindPeople() {
           allowClear
           onSearch={handleSearch}
           enterButton='查找'
-          placeholder='请输入用户名/昵称/手机号/关键字'
+          placeholder='请输入账号/昵称/手机号/关键字'
         />
         <Row gutter={16}>
           <Col className='gutter-row' span={6}>

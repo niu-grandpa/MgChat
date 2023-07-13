@@ -1,4 +1,5 @@
 import Avatar from '@/components/Avatar';
+import { useUserStore } from '@/model';
 import { UserStatus } from '@/services/enum';
 import {
   CommentOutlined,
@@ -11,7 +12,7 @@ import {
 import { Badge, BadgeProps, Button, Space } from 'antd';
 import { ipcRenderer } from 'electron';
 import { eq } from 'lodash-es';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type Props = {
@@ -39,27 +40,38 @@ const statusType: Record<number, BadgeProps['status']> = {
 function OptionBar({ icon, status, onLogout, onChange }: Props) {
   const navigate = useNavigate();
 
+  const { data } = useUserStore(state => ({ data: state.data }));
+
+  const findPageParams = useRef({
+    uid: data?.uid,
+    nickname: data?.nickname,
+  });
+
   const [index, setIndex] = useState(0);
+
+  const toFindPage = useCallback((pathname: string) => {
+    ipcRenderer.send('open-win', {
+      center: true,
+      useCache: false,
+      width: 720,
+      height: 567,
+      pathname: `${pathname}/${JSON.stringify(findPageParams.current)}`,
+    });
+  }, []);
 
   const handleClick = useCallback(
     (idx: number) => {
       const pathname = path[idx];
       // 好友搜索页
       if (idx === 3) {
-        ipcRenderer.send('open-win', {
-          pathname,
-          center: true,
-          useCache: false,
-          width: 720,
-          height: 567,
-        });
+        toFindPage(pathname);
       } else {
         navigate(pathname);
         setIndex(idx);
       }
       onChange?.(idx);
     },
-    [onChange, navigate]
+    [onChange, navigate, toFindPage]
   );
 
   useEffect(() => {

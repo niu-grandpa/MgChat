@@ -32,11 +32,12 @@ function ActionBar({
   const onAction = useCallback(
     (channel: string) => {
       const params = { pathname };
+
       if (channel === 'close-win') {
         // @ts-ignore
         params['keepAlive'] = keepAliveWhenClosed ?? false;
+        onClose?.();
       }
-      onClose?.();
       ipcRenderer.send(channel, params);
     },
     [pathname, onClose, keepAliveWhenClosed]

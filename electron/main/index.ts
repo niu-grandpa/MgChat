@@ -40,17 +40,21 @@ const indexHtml = join(process.env.DIST, 'index.html');
 let win: BrowserWindow | null = null;
 
 subprocess.init({ indexHtml, url, capacity: 4 });
-subprocess.registerListeners();
-subprocess.autoClearCache();
 
-const createMainWindow = () => (win = subprocess.createMain('/'));
+const createMainWindow = () => {
+  win = subprocess.createMain('/');
+  subprocess.registerListeners();
+  subprocess.autoClearCache();
+};
 
 app.whenReady().then(createMainWindow);
 
 app.on('window-all-closed', () => {
-  win = null;
-  subprocess.destroyAll();
-  if (process.platform !== 'darwin') app.quit();
+  try {
+    win = null;
+    subprocess.destroyAll();
+    if (process.platform !== 'darwin') app.quit();
+  } catch (error) {}
 });
 
 app.on('second-instance', () => {
