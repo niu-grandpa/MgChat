@@ -21,12 +21,12 @@ export function encrypt(data: any) {
  * @param encryptedText
  * @returns
  */
-export function decrypt(encryptedText: any) {
+export function decrypt<T>(encryptedText: string): T | null {
   try {
     const decipher = crypto.createDecipheriv(algorithm, SECRET_KEY, iv);
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-    return JSON.parse(decrypted);
+    return decrypted as T;
   } catch (error) {
     return null;
   }

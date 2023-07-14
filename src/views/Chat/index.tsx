@@ -1,14 +1,10 @@
 import ActionBar from '@/components/ActionBar';
 import ChatBubble from '@/components/ChatBubble';
 import NetAlert from '@/components/NetAlert';
-import { useCallbackPlus, useLocalUsers, useOnline } from '@/hooks';
+import { useLocalUsers, useOnline } from '@/hooks';
 import { realTimeService } from '@/services';
 import { MessageType } from '@/services/enum';
-import {
-  FileMessageLogs,
-  MessageLogs,
-  ReceivedMessage,
-} from '@/services/typing';
+import { FileMessageLogs, MessageLogs } from '@/services/typing';
 import { Button, Input, Layout, Row, Tooltip, message } from 'antd';
 import { TextAreaRef } from 'antd/es/input/TextArea';
 import { ipcRenderer } from 'electron';
@@ -99,32 +95,25 @@ function ChatView() {
     };
   }, [uid]);
 
-  const handleSendMsg = useCallbackPlus(
+  const handleSendMsg = useCallback(
     (content: string) => {
-      realTimeService.sendMessage(
-        {
-          icon,
-          content,
-          nickname,
-          from: uid!,
-          to: friend!,
-          type: MessageType.FRIEND_MSG,
-        },
-        data => {
-          setHistory(prevMsgData => [...prevMsgData, data]);
-          setContent('');
-          onSetListTop(history.length + 1);
-        }
-      );
+      if (!online) return false;
+      if (!content) {
+        message.info('不能发送空白消息');
+        return;
+      }
+      const obj = {
+        icon,
+        content,
+        nickname,
+        from: uid!,
+        to: friend!,
+        type: MessageType.FRIEND_MSG,
+      };
+      realTimeService.sendMessageToFriend(obj);
     },
-    [icon, uid, friend, nickname, history]
-  ).before((content: string) => {
-    if (!online) return false;
-    if (!content) {
-      message.info('不能发送空白消息');
-      return false;
-    }
-  });
+    [online, content, icon, uid, friend, nickname]
+  );
 
   const handleKeySend = useCallback(
     (e: KeyboardEvent) => {
@@ -146,7 +135,7 @@ function ChatView() {
           setContent(elem.value);
           // enter发送
         } else if (!e.shiftKey && value) {
-          handleSendMsg.invoke(elem.value);
+          handleSendMsg(elem.value);
         }
       }
     },
@@ -154,7 +143,7 @@ function ChatView() {
   );
 
   const handleClickSend = useCallback(() => {
-    if (content) handleSendMsg.invoke(content);
+    if (content) handleSendMsg(content);
   }, [handleSendMsg, content]);
 
   const renderItem = useCallback(({ icon, detail }: ReceivedMessage) => {

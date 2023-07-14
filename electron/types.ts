@@ -34,13 +34,13 @@ export type ChannelType =
   | 'minimize'
   | 'maximize'
   | 'adjust-win-pos'
-  | 'request-chat-data'
-  | 'post-chat-data';
+  | 'load-friend-messages'
+  | 'save-friend-messages';
 
-export type PostChatData = {
+export type SaveFriendMessages = {
   uid: string;
-  friend: string;
   icon: string;
   nickname: string;
-  log?: object;
+  friend: string;
+  data: string;
 };

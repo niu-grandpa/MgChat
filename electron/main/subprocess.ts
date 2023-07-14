@@ -13,16 +13,19 @@ import {
   ChannelType,
   CloseWindowArgs,
   CreateChildArgs,
-  PostChatData,
+  SaveFriendMessages,
 } from 'electron/types';
 import fs from 'node:fs';
 import { join } from 'node:path';
 import pkg from '../../package.json';
+import { MessageLogType, MessageLogs } from '../../src/services/typing';
 import { update } from './update';
 import { decrypt, encrypt } from './utils';
 
 const preload = join(__dirname, '../preload/index.js');
 const [width, height] = pkg.debug.winSize;
+
+const messageInitValue = '{}';
 
 /**
  * 自己的Electron客户端子进程
@@ -334,66 +337,107 @@ class Subprocess {
   };
 
   /**
-   * 保存用户聊天数据
+   * 保存好友聊天消息
    * @param event
    * @param data
    *
    * 文件结构
    *
-   * ├─┬ user_chat
+   * ├─┬ user_message
    * │ ├─┬ uid.txt 存放加密后的聊天数据
-   * │   ├─┬ { <friend>: {nickname: '', icon: '', logs: [{},...]} }   > 解密后的数据结构
+   * │   ├─┬ Map<<friend>,MessageLogs> 解密后的数据结构
    */
-  private postChatData(_: any, { uid, log, friend, ...rest }: PostChatData) {
-    const folderPath1 = join(__dirname, 'user_chat');
+  private saveFriendMessages(event: IpcMainEvent, params: SaveFriendMessages) {
+    const { uid, friend, data, nickname, icon } = params;
+    const msgData: MessageLogs | MessageLogType[] = JSON.parse(data);
+
+    const folderPath1 = join(__dirname, 'user_message');
     const filePath = join(folderPath1, `${uid}.txt`);
 
     if (!fs.existsSync(folderPath1)) {
       fs.mkdirSync(folderPath1, { recursive: true });
     } else if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, '{}');
+      fs.writeFileSync(filePath, messageInitValue);
     }
+
     fs.readFile(filePath, 'utf-8', (err, res) => {
-      if (err) return;
-      const chatData =
-        res === '{}'
-          ? {}
-          : (decrypt(res) as Record<string, PostChatData & { logs: object[] }>);
-      if (!chatData[friend]) {
-        chatData[friend] = {
-          uid,
-          ...rest,
-          friend,
-          logs: [],
-        };
+      if (err) {
+        event.sender.send('save-friend-messages-fail');
+        return;
       }
-      if (log) chatData[friend].logs.push(log);
-      fs.writeFile(filePath, encrypt(chatData), err => {});
+
+      let map: Map<string, MessageLogs> = new Map();
+
+      if (res !== messageInitValue) {
+        const source = decrypt<Map<string, MessageLogs>>(res);
+
+        if (source === null) {
+          event.sender.send('save-friend-messages-fail');
+          return;
+        }
+
+        const target = source.get(friend);
+
+        if (target) {
+          // type=MessageLogs 渲染进程那边同步合并后的消息，直接覆盖数据
+          if (!Array.isArray(msgData)) {
+            source.set(friend, msgData);
+          } else {
+            // type=MessageLogType[] 说明有新数据要保存
+            target.logs.push(...msgData);
+          }
+        } else {
+          // 首次创建数据
+          if (Array.isArray(msgData)) {
+            const newVal: MessageLogs = {
+              uid,
+              friend,
+              icon,
+              nickname,
+              logs: [...msgData],
+            };
+            source.set(friend, newVal);
+          } else {
+            source.set(friend, msgData);
+          }
+        }
+
+        map = new Map([...source]);
+      }
+
+      fs.writeFile(
+        filePath,
+        encrypt(map),
+        err => err && event.sender.send('save-friend-messages-fail')
+      );
     });
   }
 
   /**
-   * 获取用户本地聊天数据
+   * 加载所有好友聊天消息
    * @param event
    * @param uid 通过用户uid查询
    */
-  private getChatDataByUid(event: IpcMainEvent, uid: string) {
-    const folderPath1 = join(__dirname, 'user_chat');
+  private loadAllFriendMessages(event: IpcMainEvent, uid: string) {
+    const folderPath1 = join(__dirname, 'user_message');
     const filePath = join(folderPath1, `${uid}.txt`);
 
     if (!fs.existsSync(filePath)) {
-      event.sender.send('get-chat-data', { code: 404 });
+      event.sender.send('get-friend-messages', { code: 404 });
       return;
     }
 
-    fs.readFile(filePath, 'utf-8', (err, res: string) => {
+    fs.readFile(filePath, 'utf-8', (err, token: string) => {
       if (err) {
-        event.sender.send('get-chat-data', { code: 500 });
+        event.sender.send('get-friend-messages', { code: 500 });
         return;
       }
-      const decryptData = decrypt(res);
-      if (decryptData !== null) {
-        event.sender.send('get-chat-data', { code: 200, data: decryptData });
+      const result = decrypt<string>(token);
+      if (result !== null) {
+        event.sender.send('get-friend-messages', {
+          code: 200,
+          data: result,
+        });
       }
     });
   }
@@ -405,8 +449,8 @@ class Subprocess {
     maximize: this.onMaximizeWin,
     'resize-win': this.onResizeWin,
     'adjust-win-pos': this.onAdjustPos,
-    'request-chat-data': this.getChatDataByUid,
-    'post-chat-data': this.postChatData,
+    'load-friend-messages': this.loadAllFriendMessages,
+    'save-friend-messages': this.saveFriendMessages,
   };
 }
 

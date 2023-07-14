@@ -1,85 +1,59 @@
 import { useUserStore } from '@/model';
-import { realTimeService } from '@/services';
-import { MessageType } from '@/services/enum';
-import {
-  FileMessageLogs,
-  MessageLogs,
-  ReceivedMessage,
-} from '@/services/typing';
+import { msgApi } from '@/services';
+import { GetLocalMessageLogs, MessageLogs } from '@/services/typing';
+import { verifyToken } from '@/utils';
+import { message } from 'antd';
 import { ipcRenderer } from 'electron';
-import { throttle } from 'lodash';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import MessageList from './MessageList';
 
 function MessageView() {
   const { userData } = useUserStore(state => ({ userData: state.data }));
 
-  const uid = useMemo(() => userData?.uid, [userData]);
-  const chunkPos = useRef(0);
-  const [buffer, setBuffer] = useState<MessageLogs[]>([]);
-  const [msgHistory, setMsgHistory] = useState<MessageLogs[]>([]);
+  const uid = useRef(userData!.uid);
 
-  // 从本地缓存获取所有聊天记录
-  useEffect(() => {
-    const onGetHistory = (_: any, data: FileMessageLogs) => {
-      const newHistory = getHistoryFromCache(uid!, data);
-      setMsgHistory(v => [...v, ...newHistory]);
+  const [messageList, setMessageList] = useState<MessageLogs[]>([]);
+
+  // 同步用户远程聊天数据
+  const syncRemoteMessage = useCallback(async () => {
+    const { data: token } = await msgApi.syncUserMessage(uid.current);
+    const data = verifyToken<MessageLogs[]>(token);
+    setMessageList([...data]);
+  }, []);
+
+  // 同步本地缓存聊天数据
+  const syncLocalMessages = useCallback(() => {
+    const getLocalMessages = (_: any, { code, data }: GetLocalMessageLogs) => {
+      if (code === 500) {
+        message.error('同步本地消息数据失败');
+        return;
+      }
+      if (code === 200) {
+        const map: Map<string, MessageLogs> = JSON.parse(data);
+        setMessageList(prev => [...prev, ...map.values()]);
+      }
     };
-    if (uid) {
-      ipcRenderer.send('request-chat-data', uid);
-      ipcRenderer.once('get-chat-data', onGetHistory);
-    }
-  }, [uid]);
+    ipcRenderer.send('load-friend-messages', uid.current);
+    ipcRenderer.once('get-friend-messages', getLocalMessages);
+  }, []);
 
-  const onGetBroadcastData = useCallback(
-    (data: ReceivedMessage) => {
-      const { type, icon, nickname, detail } = data;
-      const { from, to } = detail;
-      if (type !== MessageType.FRIEND_MSG) return;
-      const toMe = to === uid;
-      const fromMe = from === uid;
-      // 监听广播消息中from或to都是自身uid的数据。
-      if (toMe || fromMe) {
-        let uid = toMe ? to : from;
-        let friend = fromMe ? to : from;
-        // 存储到缓冲区
-        setBuffer(v => [
-          ...v,
-          {
-            uid,
-            friend,
-            icon,
-            nickname,
-            logs: [detail],
-          },
-        ]);
-      }
-    },
-    [uid]
-  );
+  // 实时收取消息
+  const receiveMessageInRealTime = useCallback(async () => {
+    // 当sokect触发"receive-friend-message"事件时，说明广播中有新消息，
+    // 开启一个周期2分钟的轮询间隔1s重复请求消息接口，实时监听是否有给自己的新消息
+  }, []);
 
   useEffect(() => {
-    realTimeService.receiveMessage(onGetBroadcastData);
-  }, [onGetBroadcastData]);
-
-  // 节流优化
-  const onCachedMessages = useCallback(
-    throttle(() => {
-      const currentChunkPos = chunkPos.current;
-      const messagesToCache = buffer.slice(currentChunkPos);
-      for (let i = 0; i < messagesToCache.length; i++) {
-        ipcRenderer.send('post-chat-data', messagesToCache[i]);
-      }
-      chunkPos.current = currentChunkPos + messagesToCache.length;
-    }, 1000),
-    [buffer]
-  );
-
-  useEffect(() => {
-    if (buffer.length) {
-      onCachedMessages();
+    uid.current = userData!.uid;
+    try {
+      syncRemoteMessage()
+        .then(syncLocalMessages)
+        .then(receiveMessageInRealTime);
+    } catch (error) {
+      message.error('处理消息数据时发生错误');
+      console.error(error);
     }
-  }, [buffer, onCachedMessages]);
+  }, []);
 
   const handleOpenChat = useCallback(({ logs, ...info }: MessageLogs) => {
     ipcRenderer.send('open-win', {
@@ -89,20 +63,7 @@ function MessageView() {
     });
   }, []);
 
-  return <MessageList data={msgHistory} onItemClick={handleOpenChat} />;
+  return <MessageList data={messageList} onItemClick={handleOpenChat} />;
 }
 
 export default MessageView;
-
-// 从本地缓存获取所有聊天记录
-function getHistoryFromCache(uid: string, data: FileMessageLogs) {
-  const { code, ...rest } = data;
-  if (code !== 200) return [];
-  return Object.entries(rest).map(([key, item]) => {
-    return {
-      ...item,
-      uid,
-      friend: key,
-    };
-  });
-}

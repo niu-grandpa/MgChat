@@ -75,22 +75,9 @@ export type SendMessage = {
   type: MessageType;
 };
 
-export type ReceivedMessage = {
-  type: MessageType;
-  icon: string;
-  nickname: string;
-  detail: {
-    from: string;
-    to: string;
-    cid: string;
-    content: string;
-    image: string;
-    createTime: number;
-  };
-};
-
-export type FileMessageLogs = Record<string, MessageLogs> & {
+export type GetLocalMessageLogs = {
   code: 200 | 404 | 500;
+  data: string;
 };
 
 export type SearchUserResults = {

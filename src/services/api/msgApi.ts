@@ -1,17 +1,16 @@
-import { signData } from '@/utils';
 import axios from 'axios';
 import pkg from '../../../package.json';
-import { MessageLogs, ResponseData } from '../typing';
+import { ResponseData } from '../typing';
 
 const URL = pkg.debug.env.SERVER_URL + '/api/message';
 
 /**
- * 储存聊天消息
- * @param params
+ * 同步用户聊天数据
+ * @param uid
  */
-export const save = async (params: MessageLogs): ResponseData<number> => {
-  const { data } = await axios.post(`${URL}/save`, {
-    data: signData(params),
+export const syncUserMessage = async (uid: string): ResponseData<string> => {
+  const { data } = await axios.get(`${URL}/sync-friend-message`, {
+    params: uid,
   });
   return data;
 };

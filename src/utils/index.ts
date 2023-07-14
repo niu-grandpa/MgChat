@@ -50,7 +50,8 @@ export const signData = (payload: any, key?: 'password') => {
 };
 
 export const verifyToken = <T>(token: string, key?: 'password') => {
-  let res: T | null = null;
+  // @ts-ignore
+  let res: T = null;
   jwt.verify(
     token,
     key === 'password' ? PWD_SECRET_KEY : SECRET_KEY,

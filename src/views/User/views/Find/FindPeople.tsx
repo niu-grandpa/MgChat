@@ -14,8 +14,8 @@ import {
   Select,
   message,
 } from 'antd';
-import { MouseEvent, useCallback, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { MouseEvent, useCallback, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 type ApplyAddFriends = {
   message: string;
@@ -28,7 +28,12 @@ const { useForm } = Form;
 function FindPeople() {
   const online = useOnline();
 
-  const { search } = useLocation();
+  const { data } = useParams();
+
+  const parsedData = useMemo(() => JSON.parse(data || '{}'), [data]);
+  const userInfo = useRef<{ uid: string; nickname: string }>(parsedData);
+
+  const [form] = useForm<{ alias: string; group: number; message: string }>();
 
   const [filter, setFilter] = useState({
     keywords: '',
@@ -37,7 +42,6 @@ function FindPeople() {
     ageRange: '[]',
     gender: UserGender.NONE,
   });
-
   const [list, setList] = useState<SearchUserResults[]>([
     {
       uid: 'string',
@@ -48,22 +52,34 @@ function FindPeople() {
     },
   ]);
 
-  const [open, setOpen] = useState(true);
-  const [form] = useForm<{ alias: string; group: number; message: string }>();
+  const [open, setOpen] = useState(false);
 
-  const handleSearch = useCallback(
-    (value: string) => {
-      setFilter(prev => ({
-        ...prev,
-        keywords: value,
-        ageRange: JSON.parse(prev.ageRange),
-      }));
-      console.log(filter);
-    },
-    [filter]
+  const handleGenderChange = useCallback(
+    (value: number) => setFilter(v => ({ ...v, gender: value })),
+    []
   );
 
-  const handleBubbleEvent = useCallback(
+  const handleAgeRangeChange = useCallback(
+    (value: string) => setFilter(v => ({ ...v, ageRange: value })),
+    []
+  );
+
+  const handleStatusChange = useCallback(
+    ({ target }: any) => setFilter(v => ({ ...v, status: target.checked })),
+    []
+  );
+
+  const handleSearch = useCallback((value: string) => {
+    setFilter(prev => ({
+      ...prev,
+      keywords: value,
+      ageRange: JSON.parse(prev.ageRange),
+    }));
+    console.log(filter);
+  }, []);
+
+  // 利用事件冒泡获取目标子节点来执行事件
+  const handleBubbleOpenApply = useCallback(
     ({ target }: MouseEvent) => {
       const elem = target as HTMLElement;
       const { parentElement } = elem;
@@ -78,9 +94,14 @@ function FindPeople() {
         return false;
       }
       const idx = elem?.id || parentElement?.id;
-      const { nickname } = list[Number(idx)];
+      const { nickname: friendName } = list[Number(idx)];
+
+      form.setFieldsValue({
+        alias: friendName,
+        message: `我是${userInfo.current.nickname}`,
+      });
+
       setOpen(true);
-      form.setFieldsValue({ alias: nickname, message: `我是dads` });
     },
     [online]
   );
@@ -108,7 +129,7 @@ function FindPeople() {
               size='small'
               placeholder='性别'
               style={{ width: 120 }}
-              onChange={value => setFilter(v => ({ ...v, gender: value }))}
+              onChange={handleGenderChange}
               options={[
                 { value: 2, label: '不限' },
                 { value: 0, label: '男' },
@@ -121,7 +142,7 @@ function FindPeople() {
               size='small'
               placeholder='年龄'
               style={{ width: 120 }}
-              onChange={value => setFilter(v => ({ ...v, ageRange: value }))}
+              onChange={handleAgeRangeChange}
               options={[
                 { value: '[]', label: '不限' },
                 { value: '[18, 22]', label: '18-22岁' },
@@ -132,11 +153,7 @@ function FindPeople() {
             />
           </Col>
           <Col className='gutter-row' span={6}>
-            <Checkbox
-              defaultChecked={true}
-              onChange={({ target }) =>
-                setFilter(v => ({ ...v, status: target.checked }))
-              }>
+            <Checkbox defaultChecked={true} onChange={handleStatusChange}>
               在线
             </Checkbox>
           </Col>
@@ -147,7 +164,7 @@ function FindPeople() {
         {!list.length ? (
           <Empty description='暂无数据' />
         ) : (
-          <Row gutter={[8, 26]} onClick={handleBubbleEvent}>
+          <Row gutter={[8, 26]} onClick={handleBubbleOpenApply}>
             {list.map(
               ({ uid, icon, age, city, nickname }: SearchUserResults, i) => (
                 <Col span={8} key={uid}>
