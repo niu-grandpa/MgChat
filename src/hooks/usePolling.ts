@@ -1,29 +1,44 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSleep as sleep } from './useSleep';
 
-export function usePolling(callback: () => boolean | void, ms = 1000) {
-  const timer = useRef<NodeJS.Timer | null>(null);
+const interval = 1000;
+const timeout = interval * 60 * 2;
 
-  const callbackRef = useRef<() => boolean | void>(callback);
+export function usePolling(callback: () => any, delay = timeout): () => void {
+  const callbackRef = useRef<Function>(callback);
+  const clearTimer = useRef<Function>(() => {});
+  const timerRef = useRef<NodeJS.Timer | undefined>();
 
-  const clearTimer = useRef<() => void>(() => {});
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     callbackRef.current = callback;
     clearTimer.current = () => {
-      if (timer.current) {
-        clearInterval(timer.current);
-        timer.current = null;
-      }
+      setReady(false);
+      clearInterval(timerRef.current);
+      timerRef.current = undefined;
     };
-  }, [callback]);
+    return () => {
+      clearTimer.current();
+    };
+  }, []);
 
   useEffect(() => {
-    timer.current = setInterval(() => {
-      const stop = callbackRef.current();
-      if (stop === true) clearTimer.current();
-    }, ms);
-    return () => {
-      callbackRef.current();
-    };
-  }, [ms]);
+    if (ready) {
+      sleep(delay).then(() => {
+        clearTimer.current();
+      });
+    }
+  }, [ready]);
+
+  const controller = useCallback(() => {
+    if (!timerRef.current) {
+      setReady(true);
+      timerRef.current = setInterval(() => {
+        callbackRef.current();
+      }, interval);
+    }
+  }, []);
+
+  return controller;
 }

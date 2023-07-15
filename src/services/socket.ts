@@ -1,7 +1,7 @@
-import { signData, verifyToken } from '@/utils';
+import { signData } from '@/utils';
 import { io } from 'socket.io-client';
 import pkg from '../../package.json';
-import { MessageLogType, SendMessage } from './typing';
+import { SendMessage } from './typing';
 
 const socket = io(pkg.debug.env.SERVER_URL);
 
@@ -13,12 +13,11 @@ socket.on('connect', function () {
  * 接收来自好友的消息
  * @param received
  */
-export const receiveFriendMessages = (
-  received: (data: MessageLogType) => void
-) => {
+export const friendMessagesUpdated = (callback: (res: any) => void) => {
   if (!socket.hasListeners('receive-friend-message')) {
-    socket.on('receive-friend-message', (token: string) =>
-      received(verifyToken(token)!)
+    socket.on(
+      'receive-friend-message',
+      (res: { state: 'ok' | 'fali'; error?: any }) => callback(res)
     );
   }
 };
